@@ -2,9 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Share - UTrack</title>
+    <title>Share Publication - UniSafe</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
+        .share-container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        /* Platform Buttons */
         .platform-btn { 
             width: 100%; 
             padding: 15px; 
@@ -19,37 +26,35 @@
             align-items: center;
             justify-content: center;
             font-weight: 600;
+            opacity: 0.5; /* Disabled look initially */
+            pointer-events: none; /* Non-clickable initially */
         }
-        .platform-btn:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
+        /* Active State for Buttons */
+        .platform-btn.active {
+            opacity: 1;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        .platform-btn.active:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* Brand Colors */
         .linkedin { color: #0077b5; border-color: #0077b5; }
-        .linkedin:hover { background-color: #f0f7fb; }
-        
         .researchgate { color: #00ccbb; border-color: #00ccbb; }
-        .researchgate:hover { background-color: #e6fffc; }
-        
         .orcid { color: #a6ce39; border-color: #a6ce39; }
-        .orcid:hover { background-color: #f9fdf2; }
 
-        /* Loading Overlay for "Formatting Metadata" simulation */
+        /* Loading Overlay */
         #loadingOverlay {
             display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.9);
             z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
+            justify-content: center; align-items: center; flex-direction: column;
         }
         .spinner {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--primary-color);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
+            border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color);
+            border-radius: 50%; width: 50px; height: 50px;
+            animation: spin 1s linear infinite; margin-bottom: 15px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -58,7 +63,7 @@
 
 <div class="wrapper">
     <div class="sidebar">
-        <h2>UTrack Author</h2>
+        <h2>UniSafe Author</h2>
         <a href="dashboard.html">Dashboard</a>
         <a href="add_publication.html">Add New Publication</a>
         <a href="my_publications.html" class="active">My Publications</a>
@@ -66,27 +71,36 @@
     </div>
 
     <div class="main-content">
-        <h1>Share Publication</h1>
-        <p style="color:#666; margin-bottom: 30px;">Select a professional platform to share <strong>"AI in Agriculture"</strong>.</p>
+        <h1>Share Research</h1>
         
-        <div class="form-container" style="text-align: center; max-width: 600px; margin: 0 auto;">
-            <h3>Select Platform</h3>
-            <br>
-            
-            <button class="platform-btn linkedin" onclick="shareToPlatform('linkedin')">
-                Share on LinkedIn
-            </button>
-            
-            <button class="platform-btn researchgate" onclick="shareToPlatform('researchgate')">
-                Add to ResearchGate
-            </button>
-            
-            <button class="platform-btn orcid" onclick="shareToPlatform('orcid')">
-                Sync to ORCID Record
-            </button>
+        <div class="share-container">
+            <div class="form-group" style="text-align: left; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                <label style="font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; display: block;">Step 1: Select Approved Publication</label>
+                <select id="pubSelect" class="form-control" onchange="enableSharing()" style="font-size: 1rem; padding: 10px;">
+                    <option value="">-- Choose a publication --</option>
+                    <option value="Smart Cities 101">Smart Cities 101 (Approved)</option>
+                    <option value="AI in Healthcare">AI in Healthcare (Approved)</option>
+                    </select>
+            </div>
+
+            <div id="platformSection" style="opacity: 0.5; transition: opacity 0.3s;">
+                <h3 style="margin-bottom: 20px;">Step 2: Choose Platform</h3>
+                
+                <button class="platform-btn linkedin" onclick="shareToPlatform('linkedin')">
+                    Share on LinkedIn
+                </button>
+                
+                <button class="platform-btn researchgate" onclick="shareToPlatform('researchgate')">
+                    Add to ResearchGate
+                </button>
+                
+                <button class="platform-btn orcid" onclick="shareToPlatform('orcid')">
+                    Sync to ORCID Record
+                </button>
+            </div>
 
             <br>
-            <a href="my_publications.html" class="btn-secondary" style="text-decoration:none;">Cancel</a>
+            <a href="dashboard.html" class="btn-secondary" style="text-decoration:none;">Cancel</a>
         </div>
     </div>
 </div>
@@ -94,49 +108,49 @@
 <div id="loadingOverlay">
     <div class="spinner"></div>
     <h3 id="loadingText">Formatting Metadata...</h3>
-    <p>Preparing citation data for export.</p>
+    <p>Preparing citation data for external API.</p>
 </div>
 
 <script>
+    function enableSharing() {
+        const select = document.getElementById('pubSelect');
+        const section = document.getElementById('platformSection');
+        const buttons = document.querySelectorAll('.platform-btn');
+
+        if (select.value !== "") {
+            // Enable Section
+            section.style.opacity = "1";
+            buttons.forEach(btn => btn.classList.add('active'));
+        } else {
+            // Disable Section
+            section.style.opacity = "0.5";
+            buttons.forEach(btn => btn.classList.remove('active'));
+        }
+    }
+
     function shareToPlatform(platform) {
-        // 1. Show the loading overlay (Simulating Diagram Node: "System Formats Metadata")
+        // Get the selected publication title
+        const pubTitle = document.getElementById('pubSelect').value;
+        
+        // Show Loading
         const overlay = document.getElementById('loadingOverlay');
         const text = document.getElementById('loadingText');
         
         overlay.style.display = 'flex';
-        text.innerText = "Formatting Metadata for " + platform.charAt(0).toUpperCase() + platform.slice(1) + "...";
+        text.innerText = "Formatting '" + pubTitle + "' for " + platform.charAt(0).toUpperCase() + platform.slice(1) + "...";
 
-        // 2. Wait 1.5 seconds to simulate processing, then Redirect
         setTimeout(() => {
             let url = "";
-
-            // 3. Define the external URLs (Diagram Node: "Open Platform Interface")
             switch(platform) {
-                case 'linkedin':
-                    // Uses LinkedIn's official sharing URL structure (Demo)
-                    url = "https://www.linkedin.com/sharing/share-offsite/?url=https://UTrack.edu.my/pub/12345"; 
-                    break;
-                case 'researchgate':
-                    // Redirects to ResearchGate upload/login page
-                    url = "https://www.researchgate.net/upload"; 
-                    break;
-                case 'orcid':
-                    // Redirects to ORCID login/oauth
-                    url = "https://orcid.org/signin"; 
-                    break;
+                case 'linkedin': url = "https://www.linkedin.com/sharing/share-offsite/"; break;
+                case 'researchgate': url = "https://www.researchgate.net/upload"; break;
+                case 'orcid': url = "https://orcid.org/signin"; break;
             }
 
-            // 4. Perform the redirection
-            // We use window.open to open in a new tab so the user stays logged in on UTrack
             window.open(url, '_blank');
-
-            // 5. Hide overlay and show success on the current page
             overlay.style.display = 'none';
-            alert("Success! The publication metadata has been sent to " + platform + ".");
+            alert("Success! Shared '" + pubTitle + "' to " + platform + ".");
             
-            // Optional: Redirect back to list
-            // window.location.href = "my_publications.html"; 
-
         }, 1500);
     }
 </script>

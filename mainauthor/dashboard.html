@@ -102,8 +102,8 @@
     <div class="sidebar">
         <h2>UTrack Author</h2>
         <a href="dashboard.html" class="active">Dashboard</a>
-        <a href="add_publication.html">Add New Publication</a>
         <a href="my_publications.html">My Publications</a>
+        <a href="add_publication.html">Add New Publication</a>
         <a href="../index.html" class="logout-btn">Logout</a>
     </div>
 
@@ -169,50 +169,6 @@
                     [ Interactive Line Chart: Submissions vs Approvals ]
                 </div>
             </div>
-
-        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            <div class="header-flex">
-                <h3 style="margin:0;">Recent Submissions</h3>
-                <a href="my_publications.html" class="btn-secondary" style="font-size:0.8rem;">View All History</a>
-            </div>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Venue / Journal</th>
-                        <th>Submission Date</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>AI in Agriculture</strong></td>
-                        <td>Journal of Smart Farming</td>
-                        <td>14 Dec 2025</td>
-                        <td><span class="badge status-pending">Pending Verification</span></td>
-                        <td><a href="edit_publication.html" style="color:var(--primary-color); font-weight:bold;">Edit</a>
-                            <button class="btn-danger" onclick="deletePub(this)" style="color:var(--primary-color); font-weight:bold;">Delete</button></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Cybersecurity Basics</strong></td>
-                        <td>IEEE Conference 2024</td>
-                        <td>10 Nov 2025</td>
-                        <td><span class="badge status-rejected">Rejected</span></td>
-                        <td><a href="resubmit_publication.html" style="color:var(--danger-color); font-weight:bold;">Resubmit</a>
-                            <button class="btn-danger" onclick="deletePub(this)" style="color:var(--primary-color); font-weight:bold;">Delete</button></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Smart Cities 101</strong></td>
-                        <td>Urban Planning Journal</td>
-                        <td>01 Sep 2025</td>
-                        <td><span class="badge status-approved">Approved</span></td>
-                        <td><a href="share_publication.html" style="color:var(--success-color); font-weight:bold;">Share</a>
-                            <button class="btn-secondary" onclick="alert('System Message: Approved Publication Cannot be Deleted')" style="opacity:0.5;">Delete</button></td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
 
     </div>
