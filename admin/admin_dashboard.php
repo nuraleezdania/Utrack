@@ -1,17 +1,34 @@
 <?php
 session_start();
 
-// 1. Security Check: If not logged in, send back to login page
-// Since we are in the 'admin' folder, the login page is one level up (../)
-if (!isset($_SESSION['user_id'])) {
+// 1. Security Check
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../index.html"); 
     exit();
 }
 
-// 2. Role Check: Only allow 'admin'
-if ($_SESSION['role'] !== 'admin') {
-    header("Location: ../index.html?error=unauthorized");
-    exit();
+// 2. Database Variables
+$host = 'localhost';
+$db   = 'utrack_db';
+$user = 'root';
+$pass = '';
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Fetch Total Users (Excluding Admins)
+    $totalUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn();
+    
+    // Fetch Recent Users (Excluding Admins)
+    $stmt = $pdo->query("SELECT stID, fullname, role, created_at, status 
+                         FROM users 
+                         WHERE role != 'admin' 
+                         ORDER BY id DESC LIMIT 5");
+    $recentUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+} catch (PDOException $e) {
+    die("Database Error: " . $e->getMessage());
 }
 ?>
 
@@ -27,35 +44,23 @@ if ($_SESSION['role'] !== 'admin') {
     <div class="sidebar">
         <h2>Admin Panel</h2>
         <a href="admin_dashboard.php" class="active">Dashboard</a>
-        
         <a href="manage_users.php">Manage Users</a>
         <a href="manage_programme.php">Manage Programmes</a>
         <a href="system_settings.php">System Settings</a>
-        
         <a href="../auth/logout.php" class="logout-btn">Logout</a>
     </div>
 
     <div class="main-content">
         <h1>Welcome, <?php echo htmlspecialchars($_SESSION['fullname']); ?></h1>
-        <p>System Overview Dashboard</p>
         
         <div class="stats-grid">
             <div class="card">
-                <h3>1,250</h3>
-                <p>Total Users</p>
+                <h3><?php echo $totalUsers; ?></h3>
+                <p>Managed Users</p>
             </div>
-            <div class="card">
-                <h3>45</h3>
-                <p>Active Programmes</p>
-            </div>
-            <div class="card">
-                <h3>320</h3>
-                <p>Publications</p>
-            </div>
-            <div class="card">
-                <h3>98%</h3>
-                <p>System Uptime</p>
-            </div>
+            <div class="card"><h3>45</h3><p>Active Programmes</p></div>
+            <div class="card"><h3>320</h3><p>Publications</p></div>
+            <div class="card"><h3>98%</h3><p>System Uptime</p></div>
         </div>
 
         <div class="header-flex" style="display:flex; justify-content:space-between; align-items:center;">
@@ -66,17 +71,34 @@ if ($_SESSION['role'] !== 'admin') {
         <table>
             <thead>
                 <tr>
+                    <th>Staff/Student ID</th>
                     <th>Full Name</th>
                     <th>Role</th>
+                    <th>Date Registered</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td><?php echo htmlspecialchars($_SESSION['fullname']); ?></td>
-                    <td><?php echo htmlspecialchars($_SESSION['role']); ?></td>
-                    <td><span class="badge status-verified">Active Now</span></td>
-                </tr>
+                <?php if (!empty($recentUsers)): ?>
+                    <?php foreach ($recentUsers as $user): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($user['stID']); ?></td>
+                        <td><?php echo htmlspecialchars($user['fullname']); ?></td>
+                        <td><?php echo htmlspecialchars($user['role']); ?></td>
+                        <td><?php echo htmlspecialchars(date('Y-m-d', strtotime($user['created_at']))); ?></td>
+                        <td>
+                            <?php 
+                                $status = strtolower($user['status'] ?? 'pending');
+                                if ($status == 'accepted') echo '<span style="color: #28a745; font-weight: bold;">Accepted</span>';
+                                elseif ($status == 'rejected') echo '<span style="color: #dc3545; font-weight: bold;">Rejected</span>';
+                                else echo '<span style="color: #ffc107; font-weight: bold;">Pending Approval</span>';
+                            ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr><td colspan="5" style="text-align:center;">No recent registrations.</td></tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
