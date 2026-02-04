@@ -21,10 +21,10 @@ try {
     $totalUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn();
     
     // Fetch Recent Users (Excluding Admins)
-    $stmt = $pdo->query("SELECT stID, fullname, role, created_at, status 
-                         FROM users 
-                         WHERE role != 'admin' 
-                         ORDER BY id DESC LIMIT 5");
+    $stmt = $pdo->query("SELECT fullname, stID, register_as, role, status 
+    FROM users 
+    WHERE role != 'admin' 
+    ORDER BY id DESC LIMIT 5");    
     $recentUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
@@ -40,6 +40,7 @@ try {
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
+
 <div class="wrapper">
     <div class="sidebar">
         <h2>Admin Panel</h2>
@@ -47,6 +48,7 @@ try {
         <a href="manage_users.php">Manage Users</a>
         <a href="manage_programme.php">Manage Programmes</a>
         <a href="system_settings.php">System Settings</a>
+        <a href="system_reports.php">System Reports</a>
         <a href="../auth/logout.php" class="logout-btn">Logout</a>
     </div>
 
@@ -71,10 +73,10 @@ try {
         <table>
             <thead>
                 <tr>
-                    <th>Staff/Student ID</th>
                     <th>Full Name</th>
-                    <th>Role</th>
-                    <th>Date Registered</th>
+                    <th>Staff/Student ID</th>
+                    <th>Register As</th>
+                    <th>Role in Publication</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -82,10 +84,10 @@ try {
                 <?php if (!empty($recentUsers)): ?>
                     <?php foreach ($recentUsers as $user): ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($user['stID']); ?></td>
                         <td><?php echo htmlspecialchars($user['fullname']); ?></td>
+                        <td><?php echo htmlspecialchars($user['stID']); ?></td>
+                        <td><?php echo htmlspecialchars($user['register_as']); ?></td>
                         <td><?php echo htmlspecialchars($user['role']); ?></td>
-                        <td><?php echo htmlspecialchars(date('Y-m-d', strtotime($user['created_at']))); ?></td>
                         <td>
                             <?php 
                                 $status = strtolower($user['status'] ?? 'pending');

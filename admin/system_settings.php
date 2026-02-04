@@ -25,12 +25,12 @@
 <div class="wrapper">
     <div class="sidebar">
         <h2>Admin Panel</h2>
-        <a href="dashboard.html">Dashboard</a>
-        <a href="manage_users.html">Manage Users</a>
-        <a href="manage_programme.html">Manage Programmes</a>
-        <a href="system_settings.html" class="active">System Settings</a>
-        <a href="reports.html">System Reports</a>
-        <a href="../index.html" class="logout-btn">Logout</a>
+            <a href="admin_dashboard.php" class="active">Dashboard</a>
+            <a href="manage_users.php">Manage Users</a>
+            <a href="manage_programme.php">Manage Programmes</a>
+            <a href="system_settings.php">System Settings</a>
+            <a href="system_reports.php">System Reports</a>
+            <a href="../auth/logout.php" class="logout-btn">Logout</a>
     </div>
 
     <div class="main-content">

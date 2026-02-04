@@ -44,13 +44,23 @@
             </div>
             <div class="form-group">
                 <label>Register As:</label>
-                <select name="role" class="form-control">
-                    <option value="student/lecturer">Main Author</option>
-                    <option value="student/lecturer">Co-Author</option>
-                    <option value="coordinator">Programme Coordinator</option>
-                    <option value="admin">Administrator</option>
+                <select name="register_as" class="form-control">
+                    <option value="Student">Student</option>
+                    <option value="Lecturer">Lecturer</option>
+                    <option value="Coordinator">Programme Coordinator</option>
+                    <option value="Admin">Administrator</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label>Role in Publication:</label>
+                <select name="role" class="form-control">
+                    <option value="Main Author">Main Author</option>
+                    <option value="Co-author">Co-Author</option>
+                    <option value="Non-applicable">Non-applicable(for Admin & Coordinator)</option>
+
+                </select>
+            </div>
+
             <button type="submit" class="btn-primary" style="width:100%;">Create Account</button>
         </form>
 

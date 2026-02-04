@@ -1,13 +1,13 @@
 <?php
-session_start(); // Starts a session to keep the user logged in
+session_start();
 
 $host = 'localhost';
-$db   = 'utrack_db'; // Ensure this matches your DB name
-$user = 'root';
+$db   = 'utrack_db'; 
+$db_user = 'root'; 
 $pass = ''; 
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
+    $pdo = new PDO("mysql:host=$host;dbname=$db", $db_user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -22,25 +22,38 @@ try {
         // 2. Check if user exists and password matches
         if ($user && $password === $user['password']) {
             
-            // 3. Set Session variables to use in the Dashboard
+            // --- DETAILED STATUS CHECK ---
+            // Admins are always allowed in. Others must be 'accepted'.
+            if ($user['role'] !== 'admin') {
+                if ($user['status'] === 'pending') {
+                    echo "<script>alert('Your account is still pending approval. Please wait for the Admin to verify your details.'); window.location.href='../index.html';</script>";
+                    exit();
+                } elseif ($user['status'] === 'rejected') {
+                    echo "<script>alert('Your registration request has been rejected. Please contact the Admin for more information.'); window.location.href='../index.html';</script>";
+                    exit();
+                }
+            }
+
+            // 3. Set Session variables
             $_SESSION['user_id']  = $user['id'];
             $_SESSION['fullname'] = $user['fullname'];
             $_SESSION['role']     = $user['role'];
+            $_SESSION['stID']     = $user['stID']; 
 
             // 4. Redirect based on role
-            // Ensure these values match exactly what is in your database 'role' column
+            // Using ../ to go back to root from the auth/ folder
             if ($user['role'] === 'admin') {
                 header("Location: ../admin/admin_dashboard.php");
             } elseif ($user['role'] === 'coordinator') {
                 header("Location: ../coordinator_dashboard.php");
             } else {
-                // For student/lecturer roles
+                // For student/lecturer (Author role)
                 header("Location: ../author_dashboard.php");
             }
             exit(); 
             
         } else {
-            // Error handling
+            // 5. Error handling for wrong credentials
             echo "<script>alert('Invalid Email or Password'); window.location.href='../index.html';</script>";
         }
     }
