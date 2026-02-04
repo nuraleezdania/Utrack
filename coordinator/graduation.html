@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Graduation Check - UniSafe</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<div class="wrapper">
+    <div class="sidebar">
+        <h2>Coordinator</h2>
+        <a href="dashboard.html">Monitor Output</a>
+        <a href="verify_list.html">Verify & Approve</a>
+        <a href="graduation.html" class="active">Graduation Check</a>
+        <a href="reports.html">Reports & KPI</a>
+        <a href="../index.html" class="logout-btn">Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h1>Graduation Eligibility Checker</h1>
+        <p>Verify if students meet publication requirements for graduation.</p>
+
+        <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; align-items: flex-end;">
+            <div style="flex: 1;">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Filter by Programme</label>
+                <select class="form-control" style="width: 100%; padding: 10px;">
+                    <option>Bachelor of Software Engineering</option>
+                    <option>Master of Data Science</option>
+                    <option>PhD in Computing</option>
+                </select>
+            </div>
+            <button class="btn-primary" style="height: 42px;">Load Students</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Total Pubs</th>
+                    <th>Indexed (Scopus/WoS)</th>
+                    <th>Requirement (Min 2)</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>243UC245F7</td>
+                    <td><strong>Agilan A/L Buminathan</strong></td>
+                    <td style="font-weight: bold;">3</td>
+                    <td>2</td>
+                    <td><span style="color: green;">Met</span></td>
+                    <td><span class="badge status-verified">Eligible</span></td>
+                    <td>
+                        <button class="btn-primary" style="font-size: 0.8rem;" onclick="alert('Recommendation Report generated and emailed to Examination Board.')">Send Report</button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>242UC999AA</td>
+                    <td><strong>John Doe</strong></td>
+                    <td style="font-weight: bold; color: red;">1</td>
+                    <td>1</td>
+                    <td><span style="color: red;">Failed</span></td>
+                    <td><span class="badge status-rejected">Not Eligible</span></td>
+                    <td>
+                        <button class="btn-secondary" style="font-size: 0.8rem;" onclick="alert('Notification sent: Insufficient publications.')">Notify Student</button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>242UC888BB</td>
+                    <td><strong>Jane Smith</strong></td>
+                    <td style="font-weight: bold;">4</td>
+                    <td>0</td> <td><span style="color: orange;">Quality Fail</span></td>
+                    <td><span class="badge status-rejected">Review</span></td>
+                    <td>
+                        <button class="btn-secondary" style="font-size: 0.8rem;" onclick="alert('Notification sent: Indexing requirement not met.')">Notify Student</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Resubmit - UTrack</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .feedback-box { background: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        
+        /* Modal Styles */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; top: 0; 
+            width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.5); /* Dimmed background */
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="sidebar">
+        <h2>UTrack Author</h2>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="add_publication.html">Add New Publication</a>
+        <a href="my_publications.html" class="active">My Publications</a>
+        <a href="../index.html" class="logout-btn">Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h1>Resubmit Publication</h1>
+
+        <div class="feedback-box">
+            <h3 style="margin-top:0; color:#856404;">Coordinator Remarks</h3>
+            <p><em>"The PDF uploaded is corrupt. Also, please add the DOI."</em></p>
+            
+            <button class="btn-secondary" onclick="openModal()">Request Clarification</button>
+        </div>
+
+        <div class="form-container">
+            <h3>Make Corrections</h3>
+            <form onsubmit="event.preventDefault(); resubmit();">
+                <div class="form-group">
+                    <label>DOI (Requested Correction)</label>
+                    <input type="text" placeholder="Enter DOI..." required>
+                </div>
+
+                <div class="form-group">
+                    <label>Upload Revised Document</label>
+                    <input type="file" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Resubmit Publication</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="clarificationModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top: 0;">Ask Coordinator</h3>
+        <p>Please describe what part of the feedback is unclear.</p>
+        
+        <div class="form-group">
+            <label>Your Message</label>
+            <textarea id="clarificationMsg" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" placeholder="e.g., Which DOI format do you require?"></textarea>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+            <button class="btn-primary" onclick="sendClarification()">Send Message</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Logic to handle Resubmission
+    function resubmit() {
+        alert("Publication Resubmitted! Coordinator notified for re-review.");
+        window.location.href = "my_publications.html";
+    }
+
+    // Logic to Open Modal
+    function openModal() {
+        document.getElementById('clarificationModal').style.display = 'flex';
+    }
+
+    // Logic to Close Modal
+    function closeModal() {
+        document.getElementById('clarificationModal').style.display = 'none';
+    }
+
+    // Logic to Send Message
+    function sendClarification() {
+        const msg = document.getElementById('clarificationMsg').value;
+        if(msg.trim() === "") {
+            alert("Please enter a message before sending.");
+            return;
+        }
+        
+        // Simulating sending to coordinator
+        alert("Message sent to Coordinator:\n\n" + msg);
+        closeModal();
+        
+        // Optional: Clear text area after sending
+        document.getElementById('clarificationMsg').value = "";
+    }
+
+    // Close modal if clicking outside the box
+    window.onclick = function(event) {
+        const modal = document.getElementById('clarificationModal');
+        if (event.target === modal) {
+            closeModal();
+        }
+    }
+</script>
+</body>
+</html>

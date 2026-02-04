@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Author Dashboard - UTrack</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<div class="wrapper">
+    <div class="sidebar">
+        <h2>UTrack Author</h2>
+        <a href="dashboard.html" class="active">Dashboard</a>
+        <a href="add_publication.html">Add New Publication</a>
+        <a href="my_publications.html">My Publications</a>
+        <a href="../index.html" class="logout-btn">Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h1>Welcome, Author</h1>
+        
+        <div class="stats-grid">
+            <div class="card">
+                <h3>5</h3>
+                <p>Total Publications</p>
+            </div>
+            <div class="card">
+                <h3 style="color: orange;">1</h3>
+                <p>Pending Verification</p>
+            </div>
+            <div class="card">
+                <h3 style="color: red;">1</h3>
+                <p>Requires Resubmission</p>
+            </div>
+        </div>
+
+        <div class="header-flex">
+            <h2>Quick Actions</h2>
+        </div>
+        <div style="display: flex; gap: 20px;">
+            <a href="add_publication.html" class="btn-primary" style="text-decoration:none; text-align:center; padding: 20px 40px;">
+                <h3 style="margin:0;">+ Add New</h3>
+                <p style="margin:0; font-size:0.9rem;">Submit a new paper</p>
+            </a>
+            <a href="my_publications.html" class="btn-secondary" style="text-decoration:none; text-align:center; padding: 20px 40px; background: white; color: #333; border: 1px solid #ccc;">
+                <h3 style="margin:0;">View All</h3>
+                <p style="margin:0; font-size:0.9rem;">Manage existing papers</p>
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

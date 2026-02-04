@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Verify Publications - UTrack</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<div class="wrapper">
+    <div class="sidebar">
+        <h2>Coordinator</h2>
+        <a href="dashboard.html" class="active">Monitor Output</a>
+        <a href="verify_list.html">Verify & Approve</a>
+        <a href="graduation_eligibility.html">Graduation Check</a>
+        <a href="generate_reports.html">Reports & KPI</a>
+        <a href="../index.html" class="logout-btn">Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h1>Verification Queue</h1>
+        <p>Review and validate pending research submissions.</p>
+
+        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px;">
+            <input type="text" placeholder="Search title or author..." style="flex: 1; padding: 10px;">
+            <select style="padding: 10px;">
+                <option>All Types</option>
+                <option>Journal</option>
+                <option>Conference</option>
+            </select>
+            <button class="btn-primary">Filter</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>2025-12-14</td>
+                    <td><strong>AI in Healthcare Systems</strong></td>
+                    <td>Agilan (Student)</td>
+                    <td>Journal (Scopus)</td>
+                    <td><span class="badge status-pending">Pending Verification</span></td>
+                    <td>
+                        <a href="process_publication.html" class="btn-primary" style="text-decoration: none; font-size: 0.9rem;">Review</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>2025-12-15</td>
+                    <td><strong>Blockchain in Fintech</strong></td>
+                    <td>Nur Aleez (Lecturer)</td>
+                    <td>Conference</td>
+                    <td><span class="badge status-resubmitted">Resubmitted</span></td>
+                    <td>
+                        <a href="process_publication.html" class="btn-primary" style="text-decoration: none; font-size: 0.9rem;">Review</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

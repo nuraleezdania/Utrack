@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Documents - UTrack</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<div class="wrapper">
+    <div class="sidebar">
+        <h2>UTrack Author</h2>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="add_publication.html" class="active">Add New Publication</a>
+        <a href="my_publications.html">My Publications</a>
+        <a href="../index.html" class="logout-btn">Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h1>Step 2: Upload Supporting Documents</h1>
+        
+        <div class="form-container">
+            <div class="card" style="text-align:left; margin-bottom:20px; background:#eef2f6;">
+                <p><strong>Publication:</strong> AI in Agriculture (Draft)</p>
+                <p><strong>Current Status:</strong> <span class="badge status-pending">Pending Upload Supporting Document</span></p>
+            </div>
+
+            <form onsubmit="event.preventDefault(); validateFile();">
+                <div class="form-group">
+                    <label>Select Document (PDF/Word)</label>
+                    <input type="file" id="fileInput" accept=".pdf,.doc,.docx" required>
+                    <small>Max size: 20MB</small>
+                </div>
+
+                <button type="submit" class="btn-primary">Upload & Submit for Verification</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function validateFile() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+
+        // Diagram Node: System Validates File Type and Size
+        if (file.size > 20 * 1024 * 1024) { // 20MB
+            // Diagram Node: System Displays Error Message
+            alert("Error: File size exceeds 20MB limit.");
+            return;
+        }
+
+        // Diagram Node: System Attaches File -> Update Status "Pending Verification"
+        alert("File Valid. Document Attached.\n\nStatus updated to: Pending Verification.");
+        window.location.href = "my_publications.html";
+    }
+</script>
+</body>
+</html>
