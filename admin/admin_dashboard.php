@@ -19,6 +19,9 @@ try {
 
     // Fetch Total Users (Excluding Admins)
     $totalUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn();
+
+    // Fetch Total Programmes
+    $totalProgrammes = $pdo->query("SELECT COUNT(*) FROM programmes")->fetchColumn();
     
     // Fetch Recent Users (Excluding Admins)
     $stmt = $pdo->query("SELECT fullname, stID, register_as, role, status 
@@ -60,7 +63,9 @@ try {
                 <h3><?php echo $totalUsers; ?></h3>
                 <p>Managed Users</p>
             </div>
-            <div class="card"><h3>45</h3><p>Active Programmes</p></div>
+            <div class="card">
+                <h3><?php echo $totalProgrammes; ?></h3>
+                <p>Active Programmes</p></div>
             <div class="card"><h3>320</h3><p>Publications</p></div>
             <div class="card"><h3>98%</h3><p>System Uptime</p></div>
         </div>

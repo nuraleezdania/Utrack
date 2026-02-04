@@ -213,7 +213,7 @@ try {
                     <option value="Main Author(Lecturer)">Main Author(Lecturer)</option>
                     <option value="Co-Author(Student)">Co-Author(Student)</option>
                     <option value="Co-Author(Lecturer)">Co-Author(Lecturer)</option>
-                    <option value="Coordiantor">Coordinator</option>
+                    <option value="Coordinator">Coordinator</option>
                 </select>
             </div>
             <button type="submit" class="btn-primary" style="width:100%">Save Changes</button>
