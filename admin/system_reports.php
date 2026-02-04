@@ -25,6 +25,11 @@ try {
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['report_type'])) {
         $showResults = true;
         $reportType = $_POST['report_type'];
+        // Convert technical slug to a formal title for the heading
+        $reportTitle = "System Analysis Report";
+        if ($reportType === 'publication') $reportTitle = "Publication Analysis Report";
+        elseif ($reportType === 'user') $reportTitle = "User Activity & Registration Report";
+        elseif ($reportType === 'kpi') $reportTitle = "KPI Performance & Impact Report";
         $faculty = $_POST['faculty'] ?? 'All Faculties';
 
         $whereClause = " WHERE 1=1 ";
@@ -125,9 +130,8 @@ try {
         .icon { font-size: 2.5rem; margin-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border: 1px solid #eee; text-align: left; }
-        th { background: #f8f9fa; }
+        th { background: #003366; }
     </style>
-    <script src="https://cdn.jsdelivr.net/gh/linways/tabletoexcel@v1.0.4/dist/tableToExcel.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
@@ -196,17 +200,13 @@ try {
         </form>
 
         <?php if ($showResults): ?>
-        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px;">
-            <button onclick="exportToExcel()" style="background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">
-                📊 Export to Excel
-            </button>
-            <button onclick="exportToPDF()" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">
-                📕 Export to PDF
-            </button>
-        </div>
 
-        <div id="resultsSection" class="results-container">
-            <h2 style="border-left: 5px solid #003366; padding-left: 15px; margin: 40px 0 20px;">Analysis Summary: <?= htmlspecialchars($faculty) ?></h2>
+            <div id="resultsSection" class="results-container" style="background: white; padding: 20px; border-radius: 10px;">
+            <h1 style="color: #003366; margin-bottom: 5px; font-size: 1.8rem;"><?= $reportTitle ?></h1>
+            
+            <div style="border-bottom: 2px solid #003366; margin-bottom: 25px; padding-bottom: 10px;">
+                <span style="color: #666; font-weight: bold;">Faculty:</span> <?= htmlspecialchars($faculty) ?> 
+            </div>
             
             <div class="summary-cards">
                 <div class="summary-metric">
@@ -246,6 +246,12 @@ try {
                 </tbody>
             </table>
         </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; margin-bottom: 10px;">
+            <button onclick="exportToPDF()" style="background: #003366 ; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">
+                📕 Export to PDF
+            </button>
+        </div>
+
         <?php endif; ?>
     </div>
 </div>
@@ -258,14 +264,6 @@ try {
         document.getElementById('filterSection').style.display = 'block';
     }
 
-    function exportToExcel() {
-        let table = document.querySelector("#resultsSection table");
-        TableToExcel.convert(table, {
-            name: `UTrack_Report_${new Date().toLocaleDateString()}.xlsx`,
-            sheet: { name: "Report Data" }
-        });
-    }
-
     function exportToPDF() {
         const element = document.getElementById('resultsSection');
         const opt = {
@@ -273,7 +271,7 @@ try {
             filename:     `UTrack_Report_${new Date().toLocaleDateString()}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
         };
         html2pdf().set(opt).from(element).save();
     }

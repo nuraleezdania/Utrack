@@ -23,6 +23,9 @@ try {
     // Fetch Total Programmes
     $totalProgrammes = $pdo->query("SELECT COUNT(*) FROM programmes")->fetchColumn();
     
+    // 3. NEW: Fetch Total Publications (Accepted only or all)
+    $totalPublications = $pdo->query("SELECT COUNT(*) FROM reports")->fetchColumn();
+
     // Fetch Recent Users (Excluding Admins)
     $stmt = $pdo->query("SELECT fullname, stID, register_as, role, status 
     FROM users 
@@ -66,8 +69,9 @@ try {
             <div class="card">
                 <h3><?php echo $totalProgrammes; ?></h3>
                 <p>Active Programmes</p></div>
-            <div class="card"><h3>320</h3><p>Publications</p></div>
-            <div class="card"><h3>98%</h3><p>System Uptime</p></div>
+            <div class="card">
+                <h3><?php echo $totalPublications; ?></h3>
+                <p>Publications</p></div>
         </div>
 
         <div class="header-flex" style="display:flex; justify-content:space-between; align-items:center;">
