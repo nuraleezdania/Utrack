@@ -173,6 +173,31 @@ try {
     </div>
 </div>
 
+<div id="rejectModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('rejectModal')">&times;</span>
+        <h3>Reject User Request</h3>
+        <p id="reject-user-text"></p>
+        <form action="update_status.php" method="GET">
+            <input type="hidden" name="id" id="reject-id">
+            <input type="hidden" name="status" value="rejected">
+            <div class="form-group">
+                <label>Reason for Rejection:</label>
+                <textarea name="reason" rows="4" placeholder="e.g., Invalid staff ID provided..." required></textarea>
+            </div>
+            <button type="submit" class="btn-danger" style="width:100%">Confirm Rejection</button>
+        </form>
+    </div>
+</div>
+<script>
+    function openRejectModal(id, name) {
+        document.getElementById('reject-id').value = id;
+        document.getElementById('reject-user-text').innerText = "Are you sure you want to reject the request from " + name + "?";
+        document.getElementById('rejectModal').style.display = 'block';
+    }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+</script>
+
 <div id="editModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal('editModal')">&times;</span>
@@ -188,10 +213,10 @@ try {
                     <option value="Main Author(Lecturer)">Main Author(Lecturer)</option>
                     <option value="Co-Author(Student)">Co-Author(Student)</option>
                     <option value="Co-Author(Lecturer)">Co-Author(Lecturer)</option>
-                    <option value="coordinator">Coordinator</option>
+                    <option value="Coordiantor">Coordinator</option>
                 </select>
             </div>
-            <button type="submit" class="btn-primary" style="width:100%">Save</button>
+            <button type="submit" class="btn-primary" style="width:100%">Save Changes</button>
         </form>
     </div>
 </div>
