@@ -87,7 +87,7 @@ try {
 <div class="wrapper">
     <div class="sidebar">
         <h2>Admin Panel</h2>
-        <a href="admin_dashboard.php" class="active">Dashboard</a>
+        <a href="admin_dashboard.php">Dashboard</a>
         <a href="manage_users.php">Manage Users</a>
         <a href="manage_programme.php">Manage Programmes</a>
         <a href="system_settings.php">System Settings</a>
