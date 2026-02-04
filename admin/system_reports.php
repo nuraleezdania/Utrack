@@ -1,3 +1,111 @@
+<?php
+session_start();
+
+// 1. Security Check
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../index.html"); 
+    exit();
+}
+
+// 2. Database Connection
+$host = 'localhost';
+$db   = 'utrack_db';
+$user = 'root';
+$pass = '';
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $reportData = [];
+    $metrics = ['total' => 0, 'pending' => 0, 'rate' => 0];
+    $showResults = false;
+    $tableHeader = "Category";
+
+    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['report_type'])) {
+        $showResults = true;
+        $reportType = $_POST['report_type'];
+        $faculty = $_POST['faculty'] ?? 'All Faculties';
+
+        $whereClause = " WHERE 1=1 ";
+        $params = [];
+        
+        if ($faculty !== 'All Faculties') {
+            $whereClause .= " AND u.faculty = :faculty ";
+            $params[':faculty'] = $faculty;
+        }
+
+        if ($reportType === 'publication') {
+            $sql = "SELECT 
+                        COUNT(*) as total,
+                        SUM(CASE WHEN r.status = 'pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN r.status = 'accepted' THEN 1 ELSE 0 END) as accepted
+                    FROM reports r 
+                    JOIN users u ON r.user_id = u.id" . $whereClause;
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            $metrics['total'] = $res['total'] ?? 0;
+            $metrics['pending'] = $res['pending'] ?? 0;
+            $metrics['rate'] = ($metrics['total'] > 0) ? round(($res['accepted'] / $metrics['total']) * 100) : 0;
+
+            $sqlTable = "SELECT r.pub_type as category, COUNT(*) as count 
+                         FROM reports r 
+                         JOIN users u ON r.user_id = u.id " . $whereClause . " GROUP BY r.pub_type";
+            $stmtTable = $pdo->prepare($sqlTable);
+            $stmtTable->execute($params);
+            $reportData = $stmtTable->fetchAll(PDO::FETCH_ASSOC);
+            $tableHeader = "Publication Type";
+
+        } elseif ($reportType === 'user') {
+            $userWhere = ($faculty !== 'All Faculties') ? " WHERE faculty = :faculty AND role != 'admin'" : " WHERE role != 'admin'";
+            $sql = "SELECT COUNT(*) as total,
+                           SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                           SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) as active
+                    FROM users" . $userWhere;
+            
+            $stmt = $pdo->prepare($sql);
+            if($faculty !== 'All Faculties') $stmt->execute([':faculty' => $faculty]); else $stmt->execute();
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            $metrics['total'] = $res['total'] ?? 0;
+            $metrics['pending'] = $res['pending'] ?? 0;
+            $metrics['rate'] = ($metrics['total'] > 0) ? round(($res['active'] / $metrics['total']) * 100) : 0;
+
+            $sqlTable = "SELECT role as category, COUNT(*) as count FROM users " . $userWhere . " GROUP BY role";
+            $stmtTable = $pdo->prepare($sqlTable);
+            if($faculty !== 'All Faculties') $stmtTable->execute([':faculty' => $faculty]); else $stmtTable->execute();
+            $reportData = $stmtTable->fetchAll(PDO::FETCH_ASSOC);
+            $tableHeader = "User Role";
+
+        } elseif ($reportType === 'kpi') {
+            $sql = "SELECT COUNT(*) as total,
+                           SUM(CASE WHEN r.indexing IN ('Scopus', 'WoS') AND r.status = 'accepted' THEN 1 ELSE 0 END) as indexed
+                    FROM reports r
+                    JOIN users u ON r.user_id = u.id" . $whereClause;
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            $metrics['total'] = $res['total'] ?? 0;
+            $metrics['pending'] = $metrics['total'] - ($res['indexed'] ?? 0); 
+            $metrics['rate'] = ($metrics['total'] > 0) ? round(($res['indexed'] / $metrics['total']) * 100) : 0;
+
+            $sqlTable = "SELECT r.indexing as category, COUNT(*) as count FROM reports r JOIN users u ON r.user_id = u.id " . $whereClause . " GROUP BY r.indexing";
+            $stmtTable = $pdo->prepare($sqlTable);
+            $stmtTable->execute($params);
+            $reportData = $stmtTable->fetchAll(PDO::FETCH_ASSOC);
+            $tableHeader = "Indexing Status";
+        }
+    }
+} catch (PDOException $e) {
+    die("Database Error: " . $e->getMessage());
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,261 +113,169 @@
     <title>System Reports - UTrack Admin</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
-        /* --- Refined Report Specific Styles --- */
-        
-        /* 1. Report Type Selection Cards */
-        .report-type-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-        .type-card {
-            background: white;
-            border: 2px solid transparent;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-        }
-        .type-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .type-card.active {
-            border-color: var(--primary-color);
-            background-color: #f0f7fb;
-        }
-        .type-card h3 { margin: 10px 0 5px; color: var(--primary-color); font-size: 1.1rem; }
-        .type-card p { font-size: 0.9rem; color: #666; margin: 0; }
-        .icon { font-size: 2rem; color: var(--accent-color); }
-
-        /* 2. Filter Section */
-        .filter-panel {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            margin-bottom: 30px;
-            animation: slideDown 0.3s ease-out;
-        }
-        .filter-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            align-items: end;
-        }
-
-        /* 3. Results Section */
-        .results-container { display: none; } /* Hidden by default */
-        
-        .summary-cards {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .summary-metric {
-            flex: 1;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 5px solid var(--success-color);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .summary-metric h4 { margin: 0 0 5px 0; color: #666; font-size: 0.9rem; text-transform: uppercase; }
-        .summary-metric .value { font-size: 2rem; font-weight: bold; color: #333; }
-
-        .chart-placeholder {
-            background: white;
-            height: 300px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            border: 1px dashed #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #888;
-            font-style: italic;
-        }
-
-        .export-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        /* Utility Animations */
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .report-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
+        .type-card { background: white; border: 2px solid transparent; padding: 20px; border-radius: 10px; text-align: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; }
+        .type-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .type-card.active { border-color: #003366; background-color: #f0f7fb; }
+        .filter-panel { background: white; padding: 25px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .filter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: end; }
+        .summary-cards { display: flex; gap: 20px; margin-bottom: 25px; }
+        .summary-metric { flex: 1; background: white; padding: 20px; border-radius: 8px; border-left: 5px solid #28a745; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .value { font-size: 2.2rem; font-weight: bold; color: #333; }
+        .icon { font-size: 2.5rem; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; border: 1px solid #eee; text-align: left; }
+        th { background: #f8f9fa; }
     </style>
+    <script src="https://cdn.jsdelivr.net/gh/linways/tabletoexcel@v1.0.4/dist/tableToExcel.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 <div class="wrapper">
     <div class="sidebar">
         <h2>Admin Panel</h2>
-                <a href="admin_dashboard.php">Dashboard</a>
-                <a href="manage_users.php">Manage Users</a>
-                <a href="manage_programme.php">Manage Programmes</a>
-                <a href="system_settings.php">System Settings</a>
-                <a href="system_reports.php">System Reports</a>
-                <a href="../auth/logout.php" class="logout-btn">Logout</a>
+        <a href="admin_dashboard.php">Dashboard</a>
+        <a href="manage_users.php">Manage Users</a>
+        <a href="manage_programme.php">Manage Programmes</a>
+        <a href="system_settings.php">System Settings</a>
+        <a href="system_reports.php" class="active">System Reports</a>
+        <a href="../auth/logout.php" class="logout-btn">Logout</a>
     </div>
 
     <div class="main-content">
         <h1>Generate System Reports</h1>
-        <p style="color:#666; margin-bottom: 30px;">Select a category below to analyze system data and performance.</p>
+        <p style="color:#666; margin-bottom: 30px;">Analyze system metrics and faculty performance.</p>
 
-        <div class="report-type-grid">
-            <div class="type-card" onclick="selectType(this, 'publication')">
-                <div class="icon">📄</div>
-                <h3>Publication Report</h3>
-                <p>Status, Volume & Indexing</p>
+        <form method="POST" id="reportForm">
+            <input type="hidden" name="report_type" id="report_type_input" value="<?= $_POST['report_type'] ?? '' ?>">
+            
+            <div class="report-type-grid">
+                <div class="type-card <?= (isset($_POST['report_type']) && $_POST['report_type'] == 'publication') ? 'active' : '' ?>" onclick="setReportType('publication', this)">
+                    <div class="icon">📄</div>
+                    <h3>Publication Report</h3>
+                    <p>Status, Volume & Indexing</p>
+                </div>
+                <div class="type-card <?= (isset($_POST['report_type']) && $_POST['report_type'] == 'user') ? 'active' : '' ?>" onclick="setReportType('user', this)">
+                    <div class="icon">👥</div>
+                    <h3>User Activity</h3>
+                    <p>Registrations & Roles</p>
+                </div>
+                <div class="type-card <?= (isset($_POST['report_type']) && $_POST['report_type'] == 'kpi') ? 'active' : '' ?>" onclick="setReportType('kpi', this)">
+                    <div class="icon">📈</div>
+                    <h3>KPI Performance</h3>
+                    <p>Targets vs Achievement</p>
+                </div>
             </div>
-            <div class="type-card" onclick="selectType(this, 'user')">
-                <div class="icon">👥</div>
-                <h3>User Activity</h3>
-                <p>Registrations & Roles</p>
-            </div>
-            <div class="type-card" onclick="selectType(this, 'kpi')">
-                <div class="icon">📈</div>
-                <h3>KPI Performance</h3>
-                <p>Targets vs. Achievement</p>
-            </div>
-        </div>
 
-        <div id="filterSection" class="filter-panel" style="display:none;">
-            <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Configuration</h3>
-            <form onsubmit="event.preventDefault(); generateReport();">
+            <div id="filterSection" class="filter-panel" style="<?= (isset($_POST['report_type'])) ? 'display:block;' : 'display:none;' ?>">
+                <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Configuration</h3>
                 <div class="filter-grid">
-                    
                     <div class="form-group">
                         <label>Timeframe</label>
-                        <select class="form-control">
-                            <option>Last 30 Days</option>
-                            <option>Current Quarter (Q1 2026)</option>
-                            <option>Last Year (2025)</option>
-                            <option>All Time</option>
+                        <select name="timeframe" class="form-control">
+                            <option value="all">All Time</option>
+                            <option value="last30days">Last 30 Days</option>
+                            <option value="currentquarter">Current Quarter (Q1 2026)</option>
                         </select>
                     </div>
 
                     <div class="form-group" id="secondaryFilter">
                         <label id="filterLabel">Faculty</label>
-                        <select class="form-control">
-                            <option>All Faculties</option>
-                            <option>FOC (Computing)</option>
-                            <option>FOM (Management)</option>
+                        <select name="faculty" class="form-control">
+                            <option value="All Faculties">All Faculties</option>
+                            <option value="Faculty of Computing" <?= (isset($_POST['faculty']) && $_POST['faculty'] == 'Faculty of Computing') ? 'selected' : '' ?>>Faculty of Computing</option>
+                            <option value="Faculty of Management" <?= (isset($_POST['faculty']) && $_POST['faculty'] == 'Faculty of Management') ? 'selected' : '' ?>>Faculty of Management</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <button type="submit" class="btn-primary" style="width:100%; height:42px;">
-                            Generate Analysis
-                        </button>
+                        <button type="submit" class="btn-primary" style="width:100%; height:42px;">Generate Analysis</button>
                     </div>
                 </div>
-            </form>
+            </div>
+        </form>
+
+        <?php if ($showResults): ?>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px;">
+            <button onclick="exportToExcel()" style="background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">
+                📊 Export to Excel
+            </button>
+            <button onclick="exportToPDF()" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">
+                📕 Export to PDF
+            </button>
         </div>
 
         <div id="resultsSection" class="results-container">
-            <h2 style="border-left: 5px solid var(--primary-color); padding-left: 15px;">Report Results</h2>
+            <h2 style="border-left: 5px solid #003366; padding-left: 15px; margin: 40px 0 20px;">Analysis Summary: <?= htmlspecialchars($faculty) ?></h2>
             
             <div class="summary-cards">
                 <div class="summary-metric">
                     <h4>Total Records</h4>
-                    <div class="value">142</div>
+                    <div class="value"><?= $metrics['total'] ?></div>
                 </div>
-                <div class="summary-metric" style="border-color: var(--accent-color);">
+                <div class="summary-metric" style="border-color: #ffc107;">
                     <h4>Pending Review</h4>
-                    <div class="value">12</div>
+                    <div class="value"><?= $metrics['pending'] ?></div>
                 </div>
-                <div class="summary-metric" style="border-color: var(--primary-color);">
-                    <h4>Approval Rate</h4>
-                    <div class="value">88%</div>
+                <div class="summary-metric" style="border-color: #007bff;">
+                    <h4>Success Rate</h4>
+                    <div class="value"><?= $metrics['rate'] ?>%</div>
                 </div>
-            </div>
-
-            <div class="chart-placeholder">
-                [ Interactive Bar Chart: Publication Trends by Month ]
             </div>
 
             <table>
                 <thead>
                     <tr>
-                        <th>Category</th>
+                        <th><?= $tableHeader ?></th>
                         <th>Count</th>
-                        <th>Percentage</th>
-                        <th>Trend</th>
+                        <th>Distribution</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Journal Articles (Scopus)</td>
-                        <td>85</td>
-                        <td>60%</td>
-                        <td><span style="color:green;">▲ 5%</span></td>
-                    </tr>
-                    <tr>
-                        <td>Conference Proceedings</td>
-                        <td>40</td>
-                        <td>28%</td>
-                        <td><span style="color:red;">▼ 2%</span></td>
-                    </tr>
-                    <tr>
-                        <td>Book Chapters</td>
-                        <td>17</td>
-                        <td>12%</td>
-                        <td><span>-</span></td>
-                    </tr>
+                    <?php if (!empty($reportData)): ?>
+                        <?php foreach ($reportData as $row): ?>
+                        <tr>
+                            <td><strong><?= htmlspecialchars($row['category'] ?: 'Uncategorized') ?></strong></td>
+                            <td><?= $row['count'] ?></td>
+                            <td><?= ($metrics['total'] > 0) ? round(($row['count'] / $metrics['total']) * 100) : 0 ?>%</td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="3" style="text-align:center;">No data records found.</td></tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
-
-            <div class="export-actions">
-                <button class="btn-secondary" onclick="alert('Exporting data to Excel...')">
-                    Export to Excel
-                </button>
-                <button class="btn-primary" onclick="alert('Generating PDF Report...')">
-                    Download PDF
-                </button>
-            </div>
         </div>
-
+        <?php endif; ?>
     </div>
 </div>
 
 <script>
-    function selectType(card, type) {
-        // Visual Selection Logic
-        document.querySelectorAll('.type-card').forEach(el => el.classList.remove('active'));
+    function setReportType(type, card) {
+        document.getElementById('report_type_input').value = type;
+        document.querySelectorAll('.type-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
-
-        // Show Filters
         document.getElementById('filterSection').style.display = 'block';
-        document.getElementById('resultsSection').style.display = 'none'; // Hide previous results
-
-        // Dynamic Filter Logic
-        const label = document.getElementById('filterLabel');
-        if (type === 'user') {
-            label.innerText = "User Role";
-            // In a real app, you would swap the <select> options here
-        } else {
-            label.innerText = "Faculty / Department";
-        }
     }
 
-    function generateReport() {
-        // Simulate Processing
-        const btn = document.querySelector('button[type="submit"]');
-        const originalText = btn.innerText;
-        btn.innerText = "Processing...";
-        btn.disabled = true;
+    function exportToExcel() {
+        let table = document.querySelector("#resultsSection table");
+        TableToExcel.convert(table, {
+            name: `UTrack_Report_${new Date().toLocaleDateString()}.xlsx`,
+            sheet: { name: "Report Data" }
+        });
+    }
 
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.disabled = false;
-            // Show Results
-            document.getElementById('resultsSection').style.display = 'block';
-            // Scroll to results
-            document.getElementById('resultsSection').scrollIntoView({behavior: 'smooth'});
-        }, 800);
+    function exportToPDF() {
+        const element = document.getElementById('resultsSection');
+        const opt = {
+            margin:       10,
+            filename:     `UTrack_Report_${new Date().toLocaleDateString()}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
     }
 </script>
 </body>
