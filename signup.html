@@ -52,21 +52,14 @@
             </div>
 
             <div class="form-group">
-                <label>Register As:</label>
-                <select name="register_as">
-                    <option value="Student">Student</option>
-                    <option value="Lecturer">Lecturer</option>
-                    <option value="Coordinator">Programme Coordinator</option>
-                    <option value="Admin">Administrator</option>
-                </select>
-            </div>
-
-            <div class="form-group">
                 <label>Role in Publication:</label>
-                <select name="role">
-                    <option value="Main Author">Main Author</option>
-                    <option value="Co-author">Co-Author</option>
-                    <option value="Non-applicable">Non-applicable</option>
+                <select name="role" class="form-control" required>
+                    <option value="" disabled selected>-- Select Faculty --</option>
+                    <option value="Main Author(Student)">Main Author(Student)</option>
+                    <option value="Main Author(Lecturer)">Main Author(Lecturer)</option>
+                    <option value="Co-Author(Student)">Co-Author(Student)</option>
+                    <option value="Co-Author(Lecturer)">Co-Author(Lecturer</option>
+                    <option value="Coordinator">Coordinator</option>
                 </select>
             </div>
 
