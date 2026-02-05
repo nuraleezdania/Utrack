@@ -111,7 +111,7 @@ try {
                     <tr>
                         <th>Staff/Student ID</th>
                         <th>Name</th>
-                        <th>Role Requested</th>
+                        <th>Role</th>
                         <th>Email</th>
                         <th>Actions</th>
                     </tr>
@@ -121,7 +121,7 @@ try {
                     <tr>
                         <td><?php echo htmlspecialchars($u['stID']); ?></td>
                         <td><?php echo htmlspecialchars($u['fullname']); ?></td>
-                        <td><?php echo htmlspecialchars($u['registered_as']); ?></td>
+                        <td><?php echo htmlspecialchars($u['role']); ?></td>
                         <td><?php echo htmlspecialchars($u['email']); ?></td>
                         <td>
                             <a href="update_status.php?id=<?php echo $u['id']; ?>&status=accepted" class="btn-primary" style="text-decoration:none; padding:5px 10px; background-color: green" >Approve</a>

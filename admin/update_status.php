@@ -2,8 +2,9 @@
 session_start();
 
 // 1. Security: Only Admin can run this script
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    exit("Unauthorized Access");
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Admin') {
+    header("Location: ../index.html?error=unauthorized"); 
+    exit();
 }
 
 // 2. Database Connection

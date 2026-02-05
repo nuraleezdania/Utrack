@@ -14,7 +14,20 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // --- HANDLE FORM SUBMISSIONS ---
+    $coordStmt = $pdo->prepare("SELECT id, fullname FROM users WHERE role = 'Coordinator' AND status = 'accepted'");
+    $coordStmt->execute();
+    $availableCoordinators = $coordStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    //list programmes with coordinators
+    $sql = "SELECT p.id, p.name, u.fullname AS coordinator_name 
+            FROM programmes p 
+            LEFT JOIN users u ON p.coordinator_id = u.id 
+            ORDER BY p.id DESC";
+            
+    $stmt = $pdo->query($sql);
+    $programmes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // --- HANDLE FORM SUBMISSIONS ---
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         // A. Add New Programme
@@ -26,16 +39,26 @@ try {
 
         // B. Update Details
         if (isset($_POST['action']) && $_POST['action'] == 'edit') {
-            $stmt = $pdo->prepare("UPDATE programmes SET name = ? WHERE id = ?");
-            $stmt->execute([$_POST['name'], $_POST['id']]);
-            $msg = "Programme updated!";
-        }
+            $stmt = $pdo->prepare("UPDATE programmes SET name = ?, code = ?, faculty = ?, level = ? WHERE id = ?");
+            $stmt->execute([
+                $_POST['name'], 
+                $_POST['code'], 
+                $_POST['faculty'], 
+                $_POST['level'], 
+                $_POST['id']
+            ]);
+            $msg = "Programme updated successfully!";
+        }       
 
         // C. Assign Coordinator
         if (isset($_POST['action']) && $_POST['action'] == 'assign') {
+            // We use 'coordinator_id' to match the name attribute in your HTML form
             $stmt = $pdo->prepare("UPDATE programmes SET coordinator_id = ? WHERE id = ?");
-            $stmt->execute([$_POST['coord_id'], $_POST['prog_id']]);
-            $msg = "Coordinator assigned!";
+            
+            // Ensure the order matches: 1st ? is the user ID, 2nd ? is the programme ID
+            $stmt->execute([$_POST['coordinator_id'], $_POST['prog_id']]);
+            
+            $msg = "Coordinator assigned successfully!";
         }
 
         // D. Set KPIs
@@ -96,12 +119,38 @@ try {
         <?php endif; ?>
 
         <div class="action-grid">
-            <div class="action-card" id="card-add" onclick="showSection('add')"><h3>+ Add New Programme</h3></div>
+            <div class="action-card" id="card-list" onclick="showSection('list')"><h3>List Programme</h3></div>
+            <div class="action-card" id="card-add" onclick="showSection('add')"><h3>Add New Programme</h3></div>
             <div class="action-card" id="card-edit" onclick="showSection('edit')"><h3>Edit Details</h3></div>
             <div class="action-card" id="card-coord" onclick="showSection('coord')"><h3>Assign Coordinator</h3></div>
             <div class="action-card" id="card-reqs" onclick="showSection('reqs')"><h3>Set KPIs</h3></div>
         </div>
-
+        
+        <div id="section-list" class="workflow-section">
+            <h2>Programme List</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Faculty</th>
+                        <th>Level</th>
+                        <th>Coordinator</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach($programmes as $p): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($p['code']) ?></td>
+                        <td><?= htmlspecialchars($p['name']) ?></td>
+                        <td><?= htmlspecialchars($p['faculty']) ?></td>
+                        <td><?= htmlspecialchars($p['level']) ?></td>
+                        <td><?= htmlspecialchars($p['coordinator_name'] ?? 'Unassigned') ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
         <div id="section-add" class="workflow-section">
             <h2>Add New Programme</h2>
             <form method="POST">
@@ -133,60 +182,96 @@ try {
             <h2>Edit Programme Details</h2>
             <form method="POST">
                 <input type="hidden" name="action" value="edit">
-                <div class="form-group">
-                    <label>Select Programme</label>
-                    <select name="id" required>
-                        <option value="">-- Select Programme --</option>
-                        <?php foreach($programmes as $p): ?>
-                            <option value="<?= $p['id'] ?>"><?= $p['name'] ?> (<?= $p['code'] ?>)</option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group"><label>New Name</label><input type="text" name="name" required></div>
-                <button type="submit" class="btn-primary">Update Information</button>
-            </form>
-        </div>
-
-        <div id="section-coord" class="workflow-section">
-            <h2>Assign Programme Coordinator</h2>
-            <form method="POST">
-                <input type="hidden" name="action" value="assign">
                 
                 <div class="form-group">
-                    <label>Select Programme</label>
-                    <select name="prog_id" required>
+                    <label>Select Programme to Modify</label>
+                    <select name="id" id="edit_selector" required onchange="updateEditFields()">
                         <option value="">-- Select Programme --</option>
                         <?php foreach($programmes as $p): ?>
-                            <option value="<?= $p['id'] ?>"><?= $p['name'] ?></option>
+                            <option value="<?= $p['id'] ?>" 
+                                    data-name="<?= htmlspecialchars($p['name']) ?>" 
+                                    data-code="<?= htmlspecialchars($p['code']) ?>"
+                                    data-faculty="<?= htmlspecialchars($p['faculty']) ?>"
+                                    data-level="<?= htmlspecialchars($p['level']) ?>">
+                                <?= htmlspecialchars($p['name']) ?> (<?= htmlspecialchars($p['code']) ?>)
+                            </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Select Coordinator</label>
-                    <select name="coord_id" required>
-                        <option value="">-- Select Available Coordinator --</option>
-                        <?php if (empty($coordinators)): ?>
-                            <option disabled>No coordinators found. Update a user role first.</option>
-                        <?php else: ?>
-                            <?php foreach($coordinators as $c): ?>
-                                <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['fullname']) ?></option>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                    <label>Programme Name</label>
+                    <input type="text" name="name" id="edit_name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Programme Code</label>
+                    <input type="text" name="code" id="edit_code" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Faculty</label>
+                    <select name="faculty" id="edit_faculty">
+                        <option>Faculty of Computing</option>
+                        <option>Faculty of Management</option>
                     </select>
                 </div>
 
-                <button type="submit" class="btn-primary">Confirm Assignment</button>
+                <div class="form-group">
+                    <label>Level</label>
+                    <select name="level" id="edit_level">
+                        <option>Bachelor's Degree</option>
+                        <option>Master's Degree</option>
+                        <option>PhD</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn-primary" style="flex: 2;">Update Information</button>
+                    <button type="button" class="btn-danger" 
+                            style="flex: 1; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                            onclick="confirmDelete()">
+                        Delete
+                    </button>
+                </div>
             </form>
         </div>
+            <div id="section-coord" class="workflow-section">
+                <h2>Assign Programme Coordinator</h2>
+                <form method="POST">
+                    <input type="hidden" name="action" value="assign">
+                    
+                    <div class="form-group">
+                        <label>Select Programme</label>
+                        <select name="prog_id" required> <option value="">-- Select Programme --</option>
+                            <?php foreach($programmes as $p): ?>
+                                <option value="<?= $p['id'] ?>"><?= $p['name'] ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
 
-        <div id="section-reqs" class="workflow-section">
+                    <div class="form-group">
+                        <label>Assign Coordinator:</label>
+                        <select name="coordinator_id" required> <option value="" disabled selected>-- Select Approved Coordinator --</option>
+                            <?php foreach ($availableCoordinators as $coord): ?>
+                                <option value="<?php echo $coord['id']; ?>">
+                                    <?php echo htmlspecialchars($coord['fullname']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Confirm Assignment</button>
+                </form>
+            </div>      
+
+            <div id="section-reqs" class="workflow-section">
             <h2>Set Publication Targets</h2>
             <form method="POST">
                 <input type="hidden" name="action" value="kpi">
                 <div class="form-group">
                     <label>Select Programme</label>
-                    <select name="prog_id">
+                    <select name="prog_id" required>
                         <option value="">-- Select Programme --</option>
                         <?php foreach($programmes as $p): ?>
                             <option value="<?= $p['id'] ?>"><?= $p['name'] ?></option>
@@ -213,7 +298,30 @@ try {
         document.getElementById('section-' + id).style.display = 'block';
         document.getElementById('card-' + id).classList.add('active');
     }
-    showSection('add');
+    showSection('list');
+
+    function updateEditFields() {
+    const selector = document.getElementById('edit_selector');
+    const selectedOption = selector.options[selector.selectedIndex];
+    
+        if (selectedOption.value !== "") {
+            document.getElementById('edit_name').value = selectedOption.getAttribute('data-name');
+            document.getElementById('edit_code').value = selectedOption.getAttribute('data-code');
+            document.getElementById('edit_faculty').value = selectedOption.getAttribute('data-faculty');
+            document.getElementById('edit_level').value = selectedOption.getAttribute('data-level');
+        }
+    }
+
+    function confirmDelete() {
+        const id = document.getElementById('edit_selector').value;
+        if (!id) {
+            alert("Please select a programme first!");
+            return;
+        }
+        if (confirm("Are you sure? This will permanently delete the programme.")) {
+            window.location.href = "delete_programme.php?id=" + id;
+        }
+    }
 </script>
 </body>
 </html>

@@ -29,7 +29,7 @@ try {
                     echo "<script>alert('Your account is still pending approval.'); window.location.href='../index.html';</script>";
                     exit();
                 } elseif ($user['status'] === 'rejected') {
-                    echo "<script>alert('Your account has been rejected.'); window.location.href='../index.html';</script>";
+                    echo "<script>alert('Your account has been rejected.Please contact Admin and login again.'); window.location.href='../index.html';</script>";
                     exit();
                 }
             }
