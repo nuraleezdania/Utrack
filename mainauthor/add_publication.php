@@ -1,12 +1,9 @@
 <?php
 session_start();
-include "../db_conn.php"; // Keeps your connection logic separate (recommended)
+include "../db_conn.php"; 
 
-// --- BACKEND LOGIC STARTS HERE ---
 if (isset($_POST['save_publication'])) {
     
-    // 1. Get Data
-    // Use a default ID (e.g., 15) if no user is logged in yet
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 15; 
     
     $title = mysqli_real_escape_string($conn, $_POST['title']);
@@ -15,12 +12,10 @@ if (isset($_POST['save_publication'])) {
     $indexing = $_POST['indexing'];
     $venue = mysqli_real_escape_string($conn, $_POST['venue']);
 
-    // 2. Insert into DB
     $sql = "INSERT INTO publications (user_id, title, authors, year, indexing_type, venue, status) 
             VALUES ('$user_id', '$title', '$authors', '$year', '$indexing', '$venue', 'Pending Upload')";
 
     if (mysqli_query($conn, $sql)) {
-        // 3. Success -> Go to Upload Page
         $last_id = mysqli_insert_id($conn);
         header("Location: upload_documents.php?id=$last_id");
         exit();
@@ -28,7 +23,6 @@ if (isset($_POST['save_publication'])) {
         $error_msg = "Database Error: " . mysqli_error($conn);
     }
 }
-// --- BACKEND LOGIC ENDS ---
 ?>
 
 <!DOCTYPE html>
@@ -41,12 +35,12 @@ if (isset($_POST['save_publication'])) {
 <body>
 <div class="wrapper">
     <div class="sidebar">
-    <h2>UTrack Author</h2>
-    <a href="../auth/author_dashboard.php">Dashboard</a>
-    <a href="my_publications.php">My Publications</a>
-    <a href="add_publication.php" class="active">Add New Publication</a>
-    <a href="../auth/logout.php" class="logout-btn">Logout</a>
-</div>
+        <h2>UTrack Author</h2>
+        <a href="../auth/author_dashboard.php">Dashboard</a>
+        <a href="my_publications.php">My Publications</a>
+        <a href="add_publication.php" class="active">Add New Publication</a>
+        <a href="../auth/logout.php" class="logout-btn">Logout</a>
+    </div>
 
     <div class="main-content">
         <h1>Step 1: Publication Details</h1>
@@ -59,10 +53,17 @@ if (isset($_POST['save_publication'])) {
                     <label>Publication Title</label>
                     <input type="text" name="title" required>
                 </div>
+                
                 <div class="form-group">
                     <label>Authors</label>
-                    <input type="text" name="authors" placeholder="e.g. Ali, Siti" required>
+                    <p style="font-size: 0.85rem; color: #666; margin-top: 2px; margin-bottom: 8px; background: #eef2f6; padding: 8px; border-radius: 4px;">
+                        <strong>💡 How to Connect Co-Authors:</strong><br>
+                        Type the <strong>Exact Full Name</strong> of your co-authors (as registered in UTrack) separated by commas.<br>
+                        <em>Example: Ali Bin Ahmad, Siti Sarah</em>
+                    </p>
+                    <input type="text" name="authors" placeholder="e.g. Ali Bin Ahmad, Siti Sarah" required>
                 </div>
+
                 <div class="form-group">
                     <label>Year</label>
                     <input type="number" name="year" value="2026" required>

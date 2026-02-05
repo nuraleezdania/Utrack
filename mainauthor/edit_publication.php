@@ -19,13 +19,14 @@ if (isset($_POST['update_btn'])) {
     $sql_update = "UPDATE publications SET title='$title', authors='$authors', year='$year' WHERE id='$id'";
     mysqli_query($conn, $sql_update);
 
-    // Handle File Replacement (Optional)
+    // Handle File Replacement
     if (!empty($_FILES['newFile']['name'])) {
         $file_name = $_FILES['newFile']['name'];
         $file_tmp = $_FILES['newFile']['tmp_name'];
+        // Use ../uploads/ because this file is in mainauthor/
         $new_name = uniqid("PUB-", true) . '.' . pathinfo($file_name, PATHINFO_EXTENSION);
         
-        if (move_uploaded_file($file_tmp, "uploads/" . $new_name)) {
+        if (move_uploaded_file($file_tmp, "../uploads/" . $new_name)) {
             $sql_file = "UPDATE publications SET file_path='$new_name' WHERE id='$id'";
             mysqli_query($conn, $sql_file);
         }
@@ -50,12 +51,12 @@ $row = mysqli_fetch_assoc($result);
 <body>
 <div class="wrapper">
     <div class="sidebar">
-    <h2>UTrack Author</h2>
-    <a href="../auth/author_dashboard.php">Dashboard</a>
-    <a href="add_publication.php">Add New Publication</a>
-    <a href="my_publications.php" class="active">My Publications</a>
-    <a href="../auth/logout.php" class="logout-btn">Logout</a>
-</div>
+        <h2>UTrack Author</h2>
+        <a href="../auth/author_dashboard.php">Dashboard</a>
+        <a href="add_publication.php">Add New Publication</a>
+        <a href="my_publications.php" class="active">My Publications</a>
+        <a href="../auth/logout.php" class="logout-btn">Logout</a>
+    </div>
 
     <div class="main-content">
         <div class="header-flex">
@@ -73,6 +74,7 @@ $row = mysqli_fetch_assoc($result);
 
                 <div class="form-group">
                     <label>Authors</label>
+                    <p style="font-size: 0.8rem; color: #666; margin: 2px 0 5px;">*Ensure names match exactly to link Co-Authors.</p>
                     <input type="text" name="authors" value="<?php echo htmlspecialchars($row['authors']); ?>" required>
                 </div>
 
@@ -85,7 +87,7 @@ $row = mysqli_fetch_assoc($result);
                     <label>Current File</label>
                     <p style="margin: 5px 0 10px 0; font-size: 0.9rem; color: #555;">
                         <?php if($row['file_path']): ?>
-                            <a href="uploads/<?php echo $row['file_path']; ?>" target="_blank">View Current Document</a>
+                            <a href="../uploads/<?php echo $row['file_path']; ?>" target="_blank">View Current Document</a>
                         <?php else: ?>
                             No file uploaded.
                         <?php endif; ?>
@@ -93,7 +95,6 @@ $row = mysqli_fetch_assoc($result);
                     
                     <label style="color: var(--primary-color);">Replace Document (Optional)</label>
                     <input type="file" name="newFile" accept=".pdf,.doc,.docx">
-                    <small style="color: #666;">Upload a new file only if you want to replace the current one.</small>
                 </div>
 
                 <button type="submit" name="update_btn" class="btn-primary" style="width: 100%;">Save Changes</button>
