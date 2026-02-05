@@ -22,14 +22,14 @@ try {
         // 2. Check if user exists and password matches
         if ($user && $password === $user['password']) {
             
-            // --- DETAILED STATUS CHECK ---
-            // Admins are always allowed in. Others must be 'accepted'.
+            // --- STATUS CHECK ---
             if ($user['role'] !== 'admin') {
                 if ($user['status'] === 'pending') {
-                    echo "<script>alert('Your account is still pending approval. Please wait for the Admin to verify your details.'); window.location.href='../index.html';</script>";
+                    // Note: We use ../index.html here because index.html IS in the parent folder
+                    echo "<script>alert('Account pending approval.'); window.location.href='../index.html';</script>";
                     exit();
                 } elseif ($user['status'] === 'rejected') {
-                    echo "<script>alert('Your registration request has been rejected. Please contact the Admin for more information.'); window.location.href='../index.html';</script>";
+                    echo "<script>alert('Registration rejected.'); window.location.href='../index.html';</script>";
                     exit();
                 }
             }
@@ -41,19 +41,22 @@ try {
             $_SESSION['stID']     = $user['stID']; 
 
             // 4. Redirect based on role
-            // Using ../ to go back to root from the auth/ folder
+            // FIX: Removed "../" because the dashboard files are in the same 'auth' folder as login.php
+            
             if ($user['role'] === 'admin') {
-                header("Location: ../admin/admin_dashboard.php");
+                // Matches 'admin_d.php' in your screenshot
+                header("Location: admin_d.php"); 
             } elseif ($user['role'] === 'coordinator') {
-                header("Location: ../coordinator_dashboard.php");
+                // Matches 'coordinator_dashboard.php' in your screenshot
+                header("Location: coordinator_dashboard.php");
             } else {
-                // For student/lecturer (Author role)
-                header("Location: ../author_dashboard.php");
+                // For Main Author (Student/Lecturer)
+                // Matches 'author_dashboard.php' in your screenshot
+                header("Location: author_dashboard.php");
             }
             exit(); 
             
         } else {
-            // 5. Error handling for wrong credentials
             echo "<script>alert('Invalid Email or Password'); window.location.href='../index.html';</script>";
         }
     }
