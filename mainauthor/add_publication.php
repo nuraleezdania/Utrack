@@ -43,8 +43,8 @@ if (isset($_POST['save_publication'])) {
     <div class="sidebar">
     <h2>UTrack Author</h2>
     <a href="../auth/author_dashboard.php">Dashboard</a>
-    <a href="add_publication.php" class="active">Add New Publication</a>
     <a href="my_publications.php">My Publications</a>
+    <a href="add_publication.php" class="active">Add New Publication</a>
     <a href="../auth/logout.php" class="logout-btn">Logout</a>
 </div>
 

@@ -37,8 +37,8 @@ $result = mysqli_query($conn, $sql);
     <div class="sidebar">
     <h2>UTrack Author</h2>
     <a href="../auth/author_dashboard.php">Dashboard</a>
-    <a href="add_publication.php">Add New Publication</a>
     <a href="my_publications.php" class="active">My Publications</a>
+    <a href="add_publication.php">Add New Publication</a>
     <a href="../auth/logout.php" class="logout-btn">Logout</a>
 </div>
 
