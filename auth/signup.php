@@ -1,22 +1,34 @@
 <?php
-$host = 'localhost';
-$db   = 'utrack_db';
-$db_user = 'root'; 
-$pass = ''; 
+// Use the central connection file
+include '../db_conn.php';
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db", $db_user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+// Fallback if db_conn.php connection variable ($pdo) isn't set
+if (!isset($pdo)) {
+    $host = 'localhost';
+    $db   = 'utrack_db';
+    $db_user = 'root'; 
+    $pass = ''; 
+    try {
+        $pdo = new PDO("mysql:host=$host;dbname=$db", $db_user, $pass);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    } catch (PDOException $e) {
+        die("Database Error: " . $e->getMessage());
+    }
+}
 
-    if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $fullname    = $_POST['fullname'];
-        $stID        = $_POST['stID'];
-        $email       = $_POST['email'];
-        $faculty     = $_POST['faculty']; // Captured from new dropdown
-        $password    = $_POST['password']; 
-        $register_as = $_POST['register_as'];
-        $role        = $_POST['role'];
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $fullname    = $_POST['fullname'];
+    $stID        = $_POST['stID'];
+    $email       = $_POST['email'];
+    $faculty     = $_POST['faculty'];
+    $password    = $_POST['password']; 
+    
+    // FIX: We only use 'role', we don't need 'register_as'
+    // If your HTML form sends 'register_as', we can just ignore it or map it to role if needed.
+    // Assuming 'role' contains the value like "Main Author(Student)"
+    $role        = $_POST['role']; 
 
+    try {
         // Check for duplicates
         $check = $pdo->prepare("SELECT id FROM users WHERE email = ? OR stID = ?");
         $check->execute([$email, $stID]);
@@ -24,18 +36,19 @@ try {
         if ($check->rowCount() > 0) {
             display_message("Registration Failed", "Email or ID already exists.", "danger", "../signup.html", "Try Again");
         } else {
-            // INSERT with 7 values matching the DB structure
-            $sql = "INSERT INTO users (fullname, stID, email, faculty, password, register_as, role, status) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')";
+            // FIX: Removed 'register_as' from this list
+            $sql = "INSERT INTO users (fullname, stID, email, faculty, password, role, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, 'pending')";
             $stmt = $pdo->prepare($sql);
             
-            if ($stmt->execute([$fullname, $stID, $email, $faculty, $password, $register_as, $role])) {
+            // FIX: Removed $register_as from execution array
+            if ($stmt->execute([$fullname, $stID, $email, $faculty, $password, $role])) {
                 display_message("Account Created!", "Welcome, " . htmlspecialchars($fullname) . ". Your account is pending admin approval.", "success", "../index.html", "Go to Login");
             }
         }
+    } catch (PDOException $e) {
+        display_message("System Error", "Database error: " . $e->getMessage(), "danger", "../signup.html", "Back");
     }
-} catch (PDOException $e) {
-    die("Database Error: " . $e->getMessage());
 }
 
 function display_message($title, $text, $type, $link, $btnText) {

@@ -1,11 +1,23 @@
 <?php 
+// --- FIX: START SESSION FIRST ---
+session_start();
 include "../db_conn.php";
 
-// 1. Get the ID from URL (to know which publication we are editing)
+// --- CONNECTION FALLBACK ---
+if (!isset($conn) && !isset($pdo)) {
+    $conn = mysqli_connect("localhost", "root", "", "utrack_db");
+}
+
+// --- STRICT SECURITY CHECK ---
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../auth/login.php");
+    exit();
+}
+
+// 1. Get the ID from URL
 if(isset($_GET['id'])) {
     $pub_id = $_GET['id'];
 } else {
-    // If no ID provided, redirect back or show error
     header("Location: add_publication.php");
     exit();
 }
@@ -13,29 +25,25 @@ if(isset($_GET['id'])) {
 // --- BACKEND LOGIC: FILE UPLOAD ---
 if (isset($_POST['upload_btn'])) {
     
-    // File Details
     $file_name = $_FILES['file']['name'];
     $file_tmp = $_FILES['file']['tmp_name'];
     $file_size = $_FILES['file']['size'];
     $error = $_FILES['file']['error'];
 
     if ($error === 0) {
-        if ($file_size > 20000000) { // 20MB Limit
+        if ($file_size > 20000000) { 
             $msg = "File too large!";
         } else {
-            // Generate unique name
             $file_ext = pathinfo($file_name, PATHINFO_EXTENSION);
             $new_name = uniqid("PUB-", true) . '.' . $file_ext;
             $path = '../uploads/' . $new_name;
 
-            // Move File & Update DB
             if(move_uploaded_file($file_tmp, $path)) {
                 $sql = "UPDATE publications 
                         SET file_path='$new_name', status='Pending Verification' 
                         WHERE id='$pub_id'";
                 mysqli_query($conn, $sql);
                 
-                // Done! Go to list
                 echo "<script>alert('Success!'); window.location.href='../mainauthor/my_publications.php';</script>";
             } else {
                 $msg = "Failed to move file to folder.";
@@ -45,9 +53,8 @@ if (isset($_POST['upload_btn'])) {
         $msg = "Error uploading file.";
     }
 }
-// --- END LOGIC ---
 
-// Fetch Title for display (Optional visual touch)
+// Fetch Title
 $sql_fetch = "SELECT title FROM publications WHERE id='$pub_id'";
 $res = mysqli_query($conn, $sql_fetch);
 $row = mysqli_fetch_assoc($res);
@@ -65,7 +72,7 @@ $pub_title = $row['title'];
 <div class="wrapper">
     <div class="sidebar">
         <h2>UTrack Author</h2>
-        <a href="../auth/author_dashboard.php">Dashboard</a>
+        <a href="mainauthor_dashboard.php">Dashboard</a>
         <a href="add_publication.php" class="active">Add New Publication</a>
         <a href="my_publications.php">My Publications</a>
         <a href="../auth/logout.php" class="logout-btn">Logout</a>

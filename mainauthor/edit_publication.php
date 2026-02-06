@@ -2,7 +2,17 @@
 session_start();
 include "../db_conn.php";
 
-// Check ID
+// --- CONNECTION FALLBACK ---
+if (!isset($conn) && !isset($pdo)) {
+    $conn = mysqli_connect("localhost", "root", "", "utrack_db");
+}
+
+// --- STRICT SECURITY CHECK ---
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../auth/login.php");
+    exit();
+}
+
 if (!isset($_GET['id'])) {
     header("Location: my_publications.php");
     exit();
@@ -11,20 +21,23 @@ $id = $_GET['id'];
 
 // --- UPDATE LOGIC ---
 if (isset($_POST['update_btn'])) {
-    $title = mysqli_real_escape_string($conn, $_POST['title']);
-    $authors = mysqli_real_escape_string($conn, $_POST['authors']);
-    $year = $_POST['year'];
+    $title    = mysqli_real_escape_string($conn, $_POST['title']);
+    $authors  = mysqli_real_escape_string($conn, $_POST['authors']);
+    $year     = mysqli_real_escape_string($conn, $_POST['year']);
+    
+    // Capture New Fields
+    $citations = (int)$_POST['citations']; 
+    $doi       = mysqli_real_escape_string($conn, $_POST['doi']);
 
-    // Update Metadata
-    $sql_update = "UPDATE publications SET title='$title', authors='$authors', year='$year' WHERE id='$id'";
+    // Update Metadata (Included DOI)
+    $sql_update = "UPDATE publications SET title='$title', authors='$authors', year='$year', citations='$citations', doi='$doi' WHERE id='$id'";
     mysqli_query($conn, $sql_update);
 
     // Handle File Replacement
     if (!empty($_FILES['newFile']['name'])) {
         $file_name = $_FILES['newFile']['name'];
-        $file_tmp = $_FILES['newFile']['tmp_name'];
-        // Use ../uploads/ because this file is in mainauthor/
-        $new_name = uniqid("PUB-", true) . '.' . pathinfo($file_name, PATHINFO_EXTENSION);
+        $file_tmp  = $_FILES['newFile']['tmp_name'];
+        $new_name  = uniqid("PUB-", true) . '.' . pathinfo($file_name, PATHINFO_EXTENSION);
         
         if (move_uploaded_file($file_tmp, "../uploads/" . $new_name)) {
             $sql_file = "UPDATE publications SET file_path='$new_name' WHERE id='$id'";
@@ -52,7 +65,7 @@ $row = mysqli_fetch_assoc($result);
 <div class="wrapper">
     <div class="sidebar">
         <h2>UTrack Author</h2>
-        <a href="../auth/author_dashboard.php">Dashboard</a>
+        <a href="mainauthor_dashboard.php">Dashboard</a>
         <a href="add_publication.php">Add New Publication</a>
         <a href="my_publications.php" class="active">My Publications</a>
         <a href="../auth/logout.php" class="logout-btn">Logout</a>
@@ -83,11 +96,22 @@ $row = mysqli_fetch_assoc($result);
                     <input type="number" name="year" value="<?php echo $row['year']; ?>">
                 </div>
 
+                <div class="form-group">
+                    <label>DOI</label>
+                    <input type="text" name="doi" value="<?php echo htmlspecialchars($row['doi']); ?>" placeholder="e.g. 10.1109/XXX">
+                </div>
+
+                <div class="form-group">
+                    <label>Current Citations</label>
+                    <p style="font-size: 0.8rem; color: #666; margin: 2px 0 5px;">*Enter the count as seen on Google Scholar/Scopus.</p>
+                    <input type="number" name="citations" value="<?php echo $row['citations']; ?>" min="0" required>
+                </div>
+
                 <div class="form-group" style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px dashed #ccc;">
                     <label>Current File</label>
                     <p style="margin: 5px 0 10px 0; font-size: 0.9rem; color: #555;">
                         <?php if($row['file_path']): ?>
-                            <a href="../uploads/<?php echo $row['file_path']; ?>" target="_blank">View Current Document</a>
+                            <a href="/utrack/uploads/<?php echo $row['file_path']; ?>" target="_blank">View Current Document</a>
                         <?php else: ?>
                             No file uploaded.
                         <?php endif; ?>

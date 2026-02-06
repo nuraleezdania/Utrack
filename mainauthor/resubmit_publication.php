@@ -1,6 +1,17 @@
 <?php
 session_start();
-include "db_conn.php";
+include "../db_conn.php";
+
+// --- CONNECTION FALLBACK ---
+if (!isset($conn) && !isset($pdo)) {
+    $conn = mysqli_connect("localhost", "root", "", "utrack_db");
+}
+
+// --- STRICT SECURITY CHECK ---
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../auth/login.php");
+    exit();
+}
 
 if (!isset($_GET['id'])) { header("Location: my_publications.php"); exit(); }
 $id = $_GET['id'];
@@ -14,7 +25,8 @@ if (isset($_POST['resubmit_btn'])) {
     $file_tmp = $_FILES['revisedFile']['tmp_name'];
     $new_name = uniqid("RESUB-", true) . '.' . pathinfo($file_name, PATHINFO_EXTENSION);
     
-    if (move_uploaded_file($file_tmp, "uploads/" . $new_name)) {
+    // Correct Path
+    if (move_uploaded_file($file_tmp, "../uploads/" . $new_name)) {
         // Update: Set status back to Pending, Add DOI, Update File Path
         $sql = "UPDATE publications 
                 SET doi='$doi', file_path='$new_name', status='Pending Verification' 
@@ -40,7 +52,7 @@ if (isset($_POST['resubmit_btn'])) {
 <div class="wrapper">
     <div class="sidebar">
         <h2>UTrack Author</h2>
-        <a href="../auth/author_dashboard.php">Dashboard</a>
+        <a href="mainauthor_dashboard.php">Dashboard</a>
         <a href="add_publication.php">Add New Publication</a>
         <a href="my_publications.php" class="active">My Publications</a>
         <a href="../auth/logout.php" class="logout-btn">Logout</a>

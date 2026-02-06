@@ -1,9 +1,21 @@
 <?php
 session_start();
 include "../db_conn.php";
-$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 15;
 
-// Only fetch APPROVED publications
+// --- CONNECTION FALLBACK ---
+if (!isset($conn) && !isset($pdo)) {
+    $conn = mysqli_connect("localhost", "root", "", "utrack_db");
+}
+
+// --- STRICT SECURITY CHECK ---
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../auth/login.php");
+    exit();
+}
+
+$user_id = $_SESSION['user_id']; // Real User
+
+// Only fetch APPROVED publications for THIS user
 $sql = "SELECT title FROM publications WHERE user_id='$user_id' AND status='Approved'";
 $result = mysqli_query($conn, $sql);
 ?>
@@ -26,7 +38,7 @@ $result = mysqli_query($conn, $sql);
 <div class="wrapper">
     <div class="sidebar">
         <h2>UTrack Author</h2>
-        <a href="../auth/author_dashboard.php">Dashboard</a>
+        <a href="mainauthor_dashboard.php">Dashboard</a>
         <a href="add_publication.php">Add New Publication</a>
         <a href="my_publications.php" class="active">My Publications</a>
         <a href="../auth/logout.php" class="logout-btn">Logout</a>

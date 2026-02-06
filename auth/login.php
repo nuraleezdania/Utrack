@@ -17,43 +17,61 @@ try {
         // 1. Fetch user by email
         $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->execute([$email]);
-        $user = $stmt->fetch();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // 2. Check if user exists and password matches
         if ($user && $password === $user['password']) {
             
             // --- STATUS CHECK ---
-            if ($user['role'] !== 'admin') {
+            // Allow Admins through even if status is pending, others must be accepted
+            if ($user['role'] !== 'Admin') {
                 if ($user['status'] === 'pending') {
-                    // Note: We use ../index.html here because index.html IS in the parent folder
-                    echo "<script>alert('Account pending approval.'); window.location.href='../index.html';</script>";
+                    echo "<script>alert('Your account is still pending approval.'); window.location.href='../index.html';</script>";
                     exit();
                 } elseif ($user['status'] === 'rejected') {
-                    echo "<script>alert('Registration rejected.'); window.location.href='../index.html';</script>";
+                    echo "<script>alert('Your account has been rejected.Please contact Admin and login again.'); window.location.href='../index.html';</script>";
                     exit();
                 }
             }
 
-            // 3. Set Session variables
+            // 3. Set Session variables (CRITICAL: 'Admin' must be capitalized)
             $_SESSION['user_id']  = $user['id'];
             $_SESSION['fullname'] = $user['fullname'];
-            $_SESSION['role']     = $user['role'];
+            $_SESSION['role']     = $user['role']; // Stores "Admin"
             $_SESSION['stID']     = $user['stID']; 
 
             // 4. Redirect based on role
-            // FIX: Removed "../" because the dashboard files are in the same 'auth' folder as login.php
-            
-            if ($user['role'] === 'admin') {
-                // Matches 'admin_d.php' in your screenshot
-                header("Location: admin_d.php"); 
-            } elseif ($user['role'] === 'coordinator') {
-                // Matches 'coordinator_dashboard.php' in your screenshot
-                header("Location: coordinator_dashboard.php");
-            } else {
-                // For Main Author (Student/Lecturer)
-                // Matches 'author_dashboard.php' in your screenshot
-                header("Location: author_dashboard.php");
+            if ($user['role'] !== 'Admin') {
+            if ($user['status'] === 'pending') {
+                echo "<script>alert('Your account is still pending approval.'); window.location.href='../index.html';</script>";
+                exit();
+            } elseif ($user['status'] === 'rejected') {
+                echo "<script>alert('Your account was rejected. Please contact Admin.'); window.location.href='../index.html';</script>";
+                exit();
             }
+        }
+
+        // 3. Set Session variables
+        $_SESSION['user_id']  = $user['id'];
+        $_SESSION['fullname'] = $user['fullname'];
+        $_SESSION['role']     = $user['role'];
+        $_SESSION['stID']     = $user['stID']; 
+
+        if ($user['role'] === 'Admin') {
+            header("Location: ../admin/admin_dashboard.php");
+        } 
+        elseif ($user['role'] === 'Coordinator') {
+            header("Location: ../coordinator/coordinator_dashboard.php");
+        } 
+        elseif (strpos($user['role'], 'Main Author') !== false) {
+            header("Location: ../mainauthor/mainauthor_dashboard.php");
+        } 
+        elseif (strpos($user['role'], 'Co-author') !== false) {
+            header("Location: ../coauthor/coauthor_dashboard.php");
+        }
+        else {
+            echo "<script>alert('Role not recognized: " . $user['role'] . "'); window.location.href='../index.html';</script>";
+        }
             exit(); 
             
         } else {

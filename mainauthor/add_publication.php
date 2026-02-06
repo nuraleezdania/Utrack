@@ -2,18 +2,35 @@
 session_start();
 include "../db_conn.php"; 
 
+// --- Connection Safety Check ---
+if (!isset($conn) && !isset($pdo)) {
+    $conn = mysqli_connect("localhost", "root", "", "utrack_db");
+}
+
+// --- Strict Security Check ---
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../auth/login.php");
+    exit();
+}
+
 if (isset($_POST['save_publication'])) {
     
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 15; 
+    $user_id = $_SESSION['user_id']; 
     
-    $title = mysqli_real_escape_string($conn, $_POST['title']);
-    $authors = mysqli_real_escape_string($conn, $_POST['authors']);
-    $year = $_POST['year'];
-    $indexing = $_POST['indexing'];
-    $venue = mysqli_real_escape_string($conn, $_POST['venue']);
+    // Sanitize Inputs
+    $title    = mysqli_real_escape_string($conn, $_POST['title']);
+    $authors  = mysqli_real_escape_string($conn, $_POST['authors']);
+    $year     = mysqli_real_escape_string($conn, $_POST['year']);
+    $indexing = mysqli_real_escape_string($conn, $_POST['indexing']);
+    $venue    = mysqli_real_escape_string($conn, $_POST['venue']);
+    $doi      = mysqli_real_escape_string($conn, $_POST['doi']);
+    
+    // NEW: Capture Citation Count
+    $citations = (int)$_POST['citations'];
 
-    $sql = "INSERT INTO publications (user_id, title, authors, year, indexing_type, venue, status) 
-            VALUES ('$user_id', '$title', '$authors', '$year', '$indexing', '$venue', 'Pending Upload')";
+    // Insert with Citations
+    $sql = "INSERT INTO publications (user_id, title, authors, year, indexing_type, venue, doi, citations, status) 
+            VALUES ('$user_id', '$title', '$authors', '$year', '$indexing', '$venue', '$doi', '$citations', 'Pending Upload')";
 
     if (mysqli_query($conn, $sql)) {
         $last_id = mysqli_insert_id($conn);
@@ -36,7 +53,7 @@ if (isset($_POST['save_publication'])) {
 <div class="wrapper">
     <div class="sidebar">
         <h2>UTrack Author</h2>
-        <a href="../auth/author_dashboard.php">Dashboard</a>
+        <a href="mainauthor_dashboard.php">Dashboard</a>
         <a href="my_publications.php">My Publications</a>
         <a href="add_publication.php" class="active">Add New Publication</a>
         <a href="../auth/logout.php" class="logout-btn">Logout</a>
@@ -68,12 +85,24 @@ if (isset($_POST['save_publication'])) {
                     <label>Year</label>
                     <input type="number" name="year" value="2026" required>
                 </div>
+
+                <div class="form-group">
+                    <label>DOI (Optional)</label>
+                    <input type="text" name="doi" placeholder="e.g. 10.1109/ACCESS.2025.12345">
+                </div>
+                
+                <div class="form-group">
+                    <label>Current Citations</label>
+                    <input type="number" name="citations" value="0" min="0">
+                </div>
+
                 <div class="form-group">
                     <label>Indexing</label>
                     <select name="indexing">
                         <option value="Scopus">Scopus</option>
                         <option value="WoS">Web of Science</option>
                         <option value="ERA">ERA</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
                 <div class="form-group">
