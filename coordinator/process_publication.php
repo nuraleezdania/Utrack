@@ -36,8 +36,24 @@ if (!$row) {
 
 // Handle Approve/Reject
 if (isset($_POST['action'])) {
-    $status = ($_POST['action'] === 'approve') ? 'Approved' : 'Rejected';
+    $action = $_POST['action'];
     $remarks = mysqli_real_escape_string($conn, $_POST['remarks']);
+    
+    // --- 1. NEW VALIDATION LOGIC ---
+    if ($action === 'approve') {
+        // Check if both boxes are ticked
+        if (!isset($_POST['check_info']) || !isset($_POST['check_doi'])) {
+            echo "<script>
+                    alert('You must tick both checkboxes to verify the document before Approving.'); 
+                    window.history.back();
+                  </script>";
+            exit(); // Stop execution
+        }
+        $status = 'Approved';
+    } else {
+        // Rejection does not require checkboxes
+        $status = 'Rejected';
+    }
     
     $update_sql = "UPDATE publications SET status='$status', remarks='$remarks' WHERE id='$pub_id'";
     mysqli_query($conn, $update_sql);
@@ -58,7 +74,7 @@ if (isset($_POST['action'])) {
         .document-viewer { background: #555; height: 500px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; flex-direction: column; }
         .label { font-weight: bold; color: #555; display: block; margin-top: 15px; }
         .value { color: #333; font-size: 1.05rem; display: block; margin-bottom: 5px; }
-        .checklist { margin: 20px 0; background: #f9f9f9; padding: 15px; border-radius: 5px; }
+        .checklist { margin: 20px 0; background: #fff3cd; padding: 15px; border-radius: 5px; border: 1px solid #ffeeba; }
     </style>
 </head>
 <body>
@@ -113,15 +129,15 @@ if (isset($_POST['action'])) {
 
                 <form method="POST">
                     <div class="checklist">
-                        <label><input type="checkbox"> Information matches document</label><br>
-                        <label><input type="checkbox"> DOI/Link is valid</label>
+                        <label><input type="checkbox" name="check_info" value="1"> Information matches document</label><br>
+                        <label><input type="checkbox" name="check_doi" value="1"> DOI/Link is valid</label>
                     </div>
 
                     <textarea name="remarks" class="form-control" placeholder="Add remarks (optional)..." style="height:80px; margin-bottom:15px;"></textarea>
 
                     <div style="display: flex; gap: 10px;">
                         <button type="submit" name="action" value="approve" class="btn-primary" style="background-color: #28a745; width: 100%;">Approve</button>
-                        <button type="submit" name="action" value="reject" class="btn-secondary" style="background-color: #eee; width: 100%;">Reject</button>
+                        <button type="submit" name="action" value="reject" class="btn-secondary" style="background-color: #dc3545; color: white; width: 100%;">Reject</button>
                     </div>
                 </form>
             </div>

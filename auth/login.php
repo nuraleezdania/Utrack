@@ -66,7 +66,7 @@ try {
         elseif (strpos($user['role'], 'Main Author') !== false) {
             header("Location: ../mainauthor/mainauthor_dashboard.php");
         } 
-        elseif (strpos($user['role'], 'Co-author') !== false) {
+        elseif (strpos($user['role'], 'Co-Author') !== false) {
             header("Location: ../coauthor/coauthor_dashboard.php");
         }
         else {

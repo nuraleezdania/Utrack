@@ -1,6 +1,6 @@
 <?php
 // 1. Include Database Connection
-include '../db_conn.php';
+include 'db_conn.php';
 
 // Fallback: Create local connection if global one fails
 if (!isset($pdo)) {
@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt = $pdo->prepare($sql);
             
             if ($stmt->execute([$fullname, $stID, $email, $faculty, $password, $role, $programme_id])) {
-                 echo "<script>alert('Registration Successful! Please wait for Admin approval.'); window.location.href='../index.html';</script>";
+                 echo "<script>alert('Registration Successful! Please wait for Admin approval.'); window.location.href='index.html';</script>";
             }
         }
     } catch (PDOException $e) {
