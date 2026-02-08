@@ -2,8 +2,8 @@
 session_start();
 
 // 1. Security Check
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: ../index.html"); 
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Admin') {
+    header("Location: ../index.html?error=unauthorized"); 
     exit();
 }
 
@@ -25,13 +25,22 @@ try {
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['report_type'])) {
         $showResults = true;
         $reportType = $_POST['report_type'];
-        // Convert technical slug to a formal title for the heading
         $reportTitle = "System Analysis Report";
         if ($reportType === 'publication') $reportTitle = "Publication Analysis Report";
         elseif ($reportType === 'user') $reportTitle = "User Activity & Registration Report";
         elseif ($reportType === 'kpi') $reportTitle = "KPI Performance & Impact Report";
         $faculty = $_POST['faculty'] ?? 'All Faculties';
+        // ADD THIS LINE to capture the timeframe selection
+        $timeframeValue = $_POST['timeframe'] ?? 'all';
 
+        // Convert technical value to readable text
+        $timeframeLabels = [
+            'all' => 'All Time',
+            'last30days' => 'Last 30 Days',
+            'currentquarter' => 'Current Quarter (Q1 2026)'
+        ];
+        $timeframe = $timeframeLabels[$timeframeValue];   
+             
         $whereClause = " WHERE 1=1 ";
         $params = [];
         
@@ -205,7 +214,9 @@ try {
             <h1 style="color: #003366; margin-bottom: 5px; font-size: 1.8rem;"><?= $reportTitle ?></h1>
             
             <div style="border-bottom: 2px solid #003366; margin-bottom: 25px; padding-bottom: 10px;">
-                <span style="color: #666; font-weight: bold;">Faculty:</span> <?= htmlspecialchars($faculty) ?> 
+                <span style="color: #666; font-weight: bold;">Timeframe: </span> <?= htmlspecialchars($timeframe) ?> 
+                <span style="margin: 0 15px; color: #ccc;">|</span>
+                <span style="color: #666; font-weight: bold;">Faculty: </span> <?=  htmlspecialchars(string: $faculty)?>            
             </div>
             
             <div class="summary-cards">

@@ -17,43 +17,64 @@ try {
         // 1. Fetch user by email
         $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->execute([$email]);
-        $user = $stmt->fetch();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // 2. Check if user exists and password matches
         if ($user && $password === $user['password']) {
             
-            // --- DETAILED STATUS CHECK ---
-            // Admins are always allowed in. Others must be 'accepted'.
-            if ($user['role'] !== 'admin') {
+            // --- STATUS CHECK ---
+            // Allow Admins through even if status is pending, others must be accepted
+            if ($user['role'] !== 'Admin') {
                 if ($user['status'] === 'pending') {
-                    echo "<script>alert('Your account is still pending approval. Please wait for the Admin to verify your details.'); window.location.href='../index.html';</script>";
+                    echo "<script>alert('Your account is still pending approval.'); window.location.href='../index.html';</script>";
                     exit();
                 } elseif ($user['status'] === 'rejected') {
-                    echo "<script>alert('Your registration request has been rejected. Please contact the Admin for more information.'); window.location.href='../index.html';</script>";
+                    echo "<script>alert('Your account has been rejected.Please contact Admin and login again.'); window.location.href='../index.html';</script>";
                     exit();
                 }
             }
 
-            // 3. Set Session variables
+            // 3. Set Session variables (CRITICAL: 'Admin' must be capitalized)
             $_SESSION['user_id']  = $user['id'];
             $_SESSION['fullname'] = $user['fullname'];
-            $_SESSION['role']     = $user['role'];
+            $_SESSION['role']     = $user['role']; // Stores "Admin"
             $_SESSION['stID']     = $user['stID']; 
 
             // 4. Redirect based on role
-            // Using ../ to go back to root from the auth/ folder
-            if ($user['role'] === 'admin') {
-                header("Location: ../admin/admin_dashboard.php");
-            } elseif ($user['role'] === 'coordinator') {
-                header("Location: ../coordinator_dashboard.php");
-            } else {
-                // For student/lecturer (Author role)
-                header("Location: ../author_dashboard.php");
+            if ($user['role'] !== 'Admin') {
+            if ($user['status'] === 'pending') {
+                echo "<script>alert('Your account is still pending approval.'); window.location.href='../index.html';</script>";
+                exit();
+            } elseif ($user['status'] === 'rejected') {
+                echo "<script>alert('Your account was rejected. Please contact Admin.'); window.location.href='../index.html';</script>";
+                exit();
             }
+        }
+
+        // 3. Set Session variables
+        $_SESSION['user_id']  = $user['id'];
+        $_SESSION['fullname'] = $user['fullname'];
+        $_SESSION['role']     = $user['role'];
+        $_SESSION['stID']     = $user['stID']; 
+
+        if ($user['role'] === 'Admin') {
+            header("Location: ../admin/admin_dashboard.php");
+        } 
+        elseif ($user['role'] === 'Coordinator') {
+            header("Location: ../coordinator/coordinator_dashboard.php");
+        } 
+        elseif (strpos($user['role'], 'Main Author') !== false) {
+            header("Location: ../mainauthor/mainauthor_dashboard.php");
+        } 
+        elseif (strpos($user['role'], 'Co-Author') !== false) {
+            header("Location: ../coauthor/coauthor_dashboard.php");
+        }
+        else {
+            echo "<script>alert('Role not recognized: " . $user['role'] . "'); window.location.href='../index.html';</script>";
+        }
             exit(); 
             
         } else {
-            // 5. Error handling for wrong credentials
             echo "<script>alert('Invalid Email or Password'); window.location.href='../index.html';</script>";
         }
     }

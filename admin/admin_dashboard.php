@@ -1,40 +1,56 @@
 <?php
+// --- FIX: ROBUST 24-HOUR SESSION ---
+ini_set('session.gc_maxlifetime', 86400);
+session_set_cookie_params(86400);
+
 session_start();
 
-// 1. Security Check
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: ../index.html"); 
-    exit();
+// Manual Timeout Check (Overrides server defaults)
+if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 86400)) {
+    session_unset();     // Unset session variables
+    session_destroy();   // Destroy session data
+}
+$_SESSION['LAST_ACTIVITY'] = time(); // Update last activity time stamp
+
+// --- DATABASE CONNECTION ---
+include '../db_conn.php';
+if (!isset($pdo)) {
+    try {
+        $pdo = new PDO("mysql:host=localhost;dbname=utrack_db", "root", "");
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    } catch (PDOException $e) {
+        $pdo = null; 
+    }
 }
 
-// 2. Database Variables
-$host = 'localhost';
-$db   = 'utrack_db';
-$user = 'root';
-$pass = '';
+// --- SAFE MODE LOGIC ---
+// Check if user is logged in AND is Admin
+$isAdmin = (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role'] === 'Admin');
+$fullname = $isAdmin ? $_SESSION['fullname'] : "Guest (Session Expired)";
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+// Default Values (Safe Mode)
+$totalUsers = 0;
+$totalProgrammes = 0;
+$totalPublications = 0;
+$recentUsers = [];
 
-    // Fetch Total Users (Excluding Admins)
-    $totalUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn();
+if ($isAdmin && $pdo) {
+    try {
+        // 1. Fetch Totals
+        $totalUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE role != 'Admin'")->fetchColumn();
+        $totalProgrammes = $pdo->query("SELECT COUNT(*) FROM programmes")->fetchColumn();
+        $totalPublications = $pdo->query("SELECT COUNT(*) FROM publications")->fetchColumn();
 
-    // Fetch Total Programmes
-    $totalProgrammes = $pdo->query("SELECT COUNT(*) FROM programmes")->fetchColumn();
-    
-    // 3. NEW: Fetch Total Publications (Accepted only or all)
-    $totalPublications = $pdo->query("SELECT COUNT(*) FROM reports")->fetchColumn();
+        // 2. Fetch Recent Users
+        $stmt = $pdo->query("SELECT fullname, stID, role, status 
+                             FROM users 
+                             WHERE role != 'Admin' 
+                             ORDER BY id DESC LIMIT 5");    
+        $recentUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Fetch Recent Users (Excluding Admins)
-    $stmt = $pdo->query("SELECT fullname, stID, register_as, role, status 
-    FROM users 
-    WHERE role != 'admin' 
-    ORDER BY id DESC LIMIT 5");    
-    $recentUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-} catch (PDOException $e) {
-    die("Database Error: " . $e->getMessage());
+    } catch (PDOException $e) {
+        // Silent fail
+    }
 }
 ?>
 
@@ -49,18 +65,24 @@ try {
 
 <div class="wrapper">
     <div class="sidebar">
-            <h2>Admin Panel</h2>
-            <a href="admin_dashboard.php">Dashboard</a>
-            <a href="manage_users.php">Manage Users</a>
-            <a href="manage_programme.php">Manage Programmes</a>
-            <a href="system_settings.php">System Settings</a>
-            <a href="system_reports.php">System Reports</a>
-            <a href="../auth/logout.php" class="logout-btn">Logout</a>
+        <h2>Admin Panel</h2>
+        <a href="admin_dashboard.php" class="active">Dashboard</a>
+        <a href="manage_users.php">Manage Users</a>
+        <a href="manage_programme.php">Manage Programmes</a>
+        <a href="system_settings.php">System Settings</a>
+        <a href="system_reports.php">System Reports</a>
+        <a href="../auth/logout.php" class="logout-btn">Logout</a>
     </div>
 
     <div class="main-content">
-        <h1>Welcome, <?php echo htmlspecialchars($_SESSION['fullname']); ?></h1>
+        <h1>Welcome, <?php echo htmlspecialchars($fullname); ?></h1>
         
+        <?php if(!$isAdmin): ?>
+            <div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                <strong>Notice:</strong> Your session has expired. The data below is hidden. Please refresh or login again.
+            </div>
+        <?php endif; ?>
+
         <div class="stats-grid">
             <div class="card">
                 <h3><?php echo $totalUsers; ?></h3>
@@ -68,13 +90,15 @@ try {
             </div>
             <div class="card">
                 <h3><?php echo $totalProgrammes; ?></h3>
-                <p>Active Programmes</p></div>
+                <p>Active Programmes</p>
+            </div>
             <div class="card">
                 <h3><?php echo $totalPublications; ?></h3>
-                <p>Publications</p></div>
+                <p>Publications</p>
+            </div>
         </div>
 
-        <div class="header-flex" style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="header-flex" style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
             <h2>Recent User Registrations</h2>
             <a href="manage_users.php" class="btn-secondary">View All</a>
         </div>
@@ -83,9 +107,8 @@ try {
             <thead>
                 <tr>
                     <th>Full Name</th>
-                    <th>Staff/Student ID</th>
-                    <th>Register As</th>
-                    <th>Role in Publication</th>
+                    <th>ID</th>
+                    <th>Role</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -95,20 +118,21 @@ try {
                     <tr>
                         <td><?php echo htmlspecialchars($user['fullname']); ?></td>
                         <td><?php echo htmlspecialchars($user['stID']); ?></td>
-                        <td><?php echo htmlspecialchars($user['register_as']); ?></td>
                         <td><?php echo htmlspecialchars($user['role']); ?></td>
                         <td>
                             <?php 
                                 $status = strtolower($user['status'] ?? 'pending');
                                 if ($status == 'accepted') echo '<span style="color: #28a745; font-weight: bold;">Accepted</span>';
                                 elseif ($status == 'rejected') echo '<span style="color: #dc3545; font-weight: bold;">Rejected</span>';
-                                else echo '<span style="color: #ffc107; font-weight: bold;">Pending Approval</span>';
+                                else echo '<span style="color: #ffc107; font-weight: bold;">Pending</span>';
                             ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <tr><td colspan="5" style="text-align:center;">No recent registrations.</td></tr>
+                    <tr><td colspan="4" style="text-align:center;">
+                        <?php echo ($isAdmin) ? "No recent registrations." : "No data available (Session Expired)"; ?>
+                    </td></tr>
                 <?php endif; ?>
             </tbody>
         </table>

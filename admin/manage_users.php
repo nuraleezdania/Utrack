@@ -2,8 +2,8 @@
 session_start();
 
 // 1. Security Check
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: ../index.html");
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Admin') {
+    header("Location: ../index.html?error=unauthorized"); 
     exit();
 }
 
@@ -79,8 +79,10 @@ try {
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .readonly-field { background: #f4f4f4; color: #777; cursor: not-allowed; }
         .btn-small { padding: 5px 10px; font-size: 0.75rem; text-decoration: none; border-radius: 4px; display: inline-block; margin-right: 5px; border: none; cursor: pointer; }
-        .btn-delete { background-color: #000; color: #fff; } /* Distinct color for Delete */
+        .btn-delete { background-color: red; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;} /* Distinct color for Delete */
         .btn-delete:hover { background-color: #444; }
+        .btn-danger {background-color: #c0392b; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;}
+
     </style>
 </head>
 <body>
@@ -109,7 +111,7 @@ try {
                     <tr>
                         <th>Staff/Student ID</th>
                         <th>Name</th>
-                        <th>Role Requested</th>
+                        <th>Role</th>
                         <th>Email</th>
                         <th>Actions</th>
                     </tr>
@@ -122,8 +124,8 @@ try {
                         <td><?php echo htmlspecialchars($u['role']); ?></td>
                         <td><?php echo htmlspecialchars($u['email']); ?></td>
                         <td>
-                            <a href="update_status.php?id=<?php echo $u['id']; ?>&status=accepted" class="btn-primary" style="text-decoration:none; padding:5px 10px;">Approve</a>
-                            <button class="btn-danger" onclick="openRejectModal('<?php echo $u['id']; ?>', '<?php echo $u['fullname']; ?>')">Reject</button>
+                            <a href="update_status.php?id=<?php echo $u['id']; ?>&status=accepted" class="btn-primary" style="text-decoration:none; padding:5px 10px; background-color: green" >Approve</a>
+                            <button class="btn-primary" style="text-decoration:none; padding:5px 10px; background-color: red; margin-left: 5px"onclick="openRejectModal('<?php echo $u['id']; ?>', '<?php echo $u['fullname']; ?>')">Reject</button>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -155,15 +157,15 @@ try {
                             </span>
                         </td>
                         <td>
-                            <button class="btn-secondary btn-small" onclick="openEditModal('<?php echo $u['fullname']; ?>', '<?php echo $u['role']; ?>', '<?php echo $u['stID']; ?>', '<?php echo $u['id']; ?>')">Edit</button>
+                            <button class="btn-primary" onclick="openEditModal('<?php echo $u['fullname']; ?>', '<?php echo $u['role']; ?>', '<?php echo $u['stID']; ?>', '<?php echo $u['id']; ?>')">Edit</button>
                             
                             <?php if($u['status'] === 'accepted'): ?>
-                                <a href="manage_users.php?action=deactivate&id=<?php echo $u['id']; ?>" class="btn-danger btn-small" onclick="return confirm('Deactivate this user?')">Deactivate</a>
+                                <a href="manage_users.php?action=deactivate&id=<?php echo $u['id']; ?>" class="btn-danger" style="text-decoration:none; padding:5px 10px;" onclick="return confirm('Deactivate this user?')">Deactivate</a>
                             <?php else: ?>
-                                <a href="manage_users.php?action=activate&id=<?php echo $u['id']; ?>" class="btn-primary btn-small">Activate</a>
+                                <a href="manage_users.php?action=activate&id=<?php echo $u['id']; ?>" class="btn-primary" style="text-decoration:none; padding:5px 10px; background-color: green">Activate</a>
                             <?php endif; ?>
 
-                            <a href="manage_users.php?action=delete&id=<?php echo $u['id']; ?>" class="btn-small btn-delete" onclick="return confirm('WARNING: This will permanently DELETE the user. This cannot be undone. Continue?')">Delete</a>
+                            <a href="manage_users.php?action=delete&id=<?php echo $u['id']; ?>" class="btn-delete" style="text-decoration:none; padding:5px 10px;" onclick="return confirm('WARNING: This will permanently DELETE the user. This cannot be undone. Continue?')">Delete</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>
